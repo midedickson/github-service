@@ -27,7 +27,7 @@ Before you begin, ensure you have the following installed on your machine:
 1. Clone the repository:
 
    ```sh
-   git clone https://github.com/yourusername/github-service.git
+   git clone https://github.com/midedickson/github-service.git
    ```
 
 2. Navigate to the project directory:
