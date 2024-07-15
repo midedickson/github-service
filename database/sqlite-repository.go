@@ -125,7 +125,7 @@ func (s *SqliteDBRepository) SearchRepository(ownerID uint, repoSearchParams *ut
 	repos := &[]*models.Repository{}
 	dbQueryBuilder := s.DB.Preload("Owner").Where("owner_id =?", ownerID)
 	if repoSearchParams.TopStarsCount > 0 {
-		dbQueryBuilder = dbQueryBuilder.Order("stargazers_count DESC").Limit(repoSearchParams.TopStarsCount)
+		dbQueryBuilder = dbQueryBuilder.Order("stars_count DESC").Limit(repoSearchParams.TopStarsCount)
 	}
 	if repoSearchParams.Name != "" {
 		dbQueryBuilder = dbQueryBuilder.Where("name LIKE?", "%"+repoSearchParams.Name+"%")
