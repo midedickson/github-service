@@ -5,7 +5,6 @@ go 1.22.3
 require (
 	github.com/gorilla/mux v1.8.1
 	github.com/stretchr/testify v1.9.0
-	go.uber.org/mock v0.4.0
 	gorm.io/driver/sqlite v1.5.6
 	gorm.io/gorm v1.25.11
 )

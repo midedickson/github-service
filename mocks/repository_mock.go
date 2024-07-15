@@ -17,6 +17,9 @@ func (m *MockDBRepository) CreateUser(createUserPayload *dto.CreateUserPayloadDT
 
 func (m *MockDBRepository) GetUser(username string) (*models.User, error) {
 	args := m.Called(username)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
 	return args.Get(0).(*models.User), args.Error(1)
 }
 
@@ -27,6 +30,9 @@ func (m *MockDBRepository) StoreRepositoryInfo(remoteRepoInfo *dto.RepositoryInf
 
 func (m *MockDBRepository) GetRepository(ownerID uint, repoName string) (*models.Repository, error) {
 	args := m.Called(ownerID, repoName)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
 	return args.Get(0).(*models.Repository), args.Error(1)
 }
 
