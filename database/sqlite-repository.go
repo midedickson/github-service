@@ -11,7 +11,6 @@ import (
 )
 
 type SqliteDBRepository struct {
-	// Implement methods for storing and retrieving repository information and commits
 	DB *gorm.DB
 }
 
@@ -49,7 +48,7 @@ func (s *SqliteDBRepository) GetUser(username string) (*models.User, error) {
 }
 
 func (s *SqliteDBRepository) StoreRepositoryInfo(remoteRepoInfo *dto.RepositoryInfoResponseDTO, owner *models.User) (*models.Repository, error) {
-	// Implement logic to store repository info in the database
+	//  logic to store repository info in the database
 
 	// check if this remote repository already exists in our database
 	existingRepo, err := s.GetRepositoryInfoByRemoteId(remoteRepoInfo.ID)
@@ -95,7 +94,7 @@ func (s *SqliteDBRepository) StoreRepositoryInfo(remoteRepoInfo *dto.RepositoryI
 }
 
 func (s *SqliteDBRepository) GetRepositoryInfoByRemoteId(remoteID int) (*models.Repository, error) {
-	// Implement logic to retrieve repository info from the database by remote ID
+	//  logic to retrieve repository info from the database by remote ID
 	repo := &models.Repository{}
 	err := s.DB.Where("remote_id =?", remoteID).First(repo).Error
 	if err != nil {
@@ -108,7 +107,7 @@ func (s *SqliteDBRepository) GetRepositoryInfoByRemoteId(remoteID int) (*models.
 }
 
 func (s *SqliteDBRepository) GetRepository(ownerID uint, repoName string) (*models.Repository, error) {
-	// Implement logic to retrieve repository info from the database by ID
+	//  logic to retrieve repository info from the database by ID
 	repo := &models.Repository{}
 	err := s.DB.Where("owner_id =?", ownerID).Where("name =?", repoName).Preload("Owner").First(repo).Error
 	if err != nil {
@@ -121,7 +120,7 @@ func (s *SqliteDBRepository) GetRepository(ownerID uint, repoName string) (*mode
 }
 
 func (s *SqliteDBRepository) SearchRepository(ownerID uint, repoSearchParams *utils.RepositorySearchParams) ([]*models.Repository, error) {
-	// Implement logic to retrieve all repositories from the database
+	//  logic to retrieve all repositories from the database
 	repos := &[]*models.Repository{}
 	dbQueryBuilder := s.DB.Preload("Owner").Where("owner_id =?", ownerID)
 	if repoSearchParams.TopStarsCount > 0 {
@@ -142,7 +141,7 @@ func (s *SqliteDBRepository) SearchRepository(ownerID uint, repoSearchParams *ut
 }
 
 func (s *SqliteDBRepository) GetAllRepositories() ([]*models.Repository, error) {
-	// Implement logic to retrieve all repositories from the database
+	//  logic to retrieve all repositories from the database
 	repos := &[]*models.Repository{}
 	err := s.DB.Preload("Owner").Find(&repos).Error
 	if err != nil {
@@ -152,7 +151,7 @@ func (s *SqliteDBRepository) GetAllRepositories() ([]*models.Repository, error) 
 }
 
 func (s *SqliteDBRepository) StoreRepositoryCommits(commitRepoInfos *[]dto.CommitResponseDTO, repoName string, owner *models.User) error {
-	// Implement logic to store commit info in the database
+	//  logic to store commit info in the database
 	repo, err := s.GetRepository(owner.ID, repoName)
 
 	if err != nil {
@@ -203,7 +202,7 @@ func (s *SqliteDBRepository) GetCommitBySHA(sha string) (*models.Commit, error) 
 }
 
 func (s *SqliteDBRepository) GetRepositoryCommits(repoName string) ([]*models.Commit, error) {
-	// Implement logic to retrieve commit info from the database by repository name
+	//  logic to retrieve commit info from the database by repository name
 	commits := &[]*models.Commit{}
 	err := s.DB.Where("repository_name =?", repoName).Find(commits).Error
 	if err != nil {

@@ -7,7 +7,7 @@ import (
 )
 
 func (t *AsyncTask) GetAllRepoForUser(wg *sync.WaitGroup) {
-	// Implement logic to fetch all repositories for the given user
+	//  logic to fetch all repositories for the given user
 	// Use the GetAllRepoForUserQueue channel to send and recieve the user to and from the worker pool
 	defer wg.Done()
 	for user := range t.GetAllRepoForUserQueue {
@@ -52,7 +52,7 @@ func (t *AsyncTask) GetAllRepoForUser(wg *sync.WaitGroup) {
 }
 
 func (t *AsyncTask) FetchNewlyRequestedRepo(wg *sync.WaitGroup) {
-	// Implement logic to fetch a newly requested repo and commits for the given repository
+	//  logic to fetch a newly requested repo and commits for the given repository
 	defer wg.Done()
 	log.Println("waiting for newly requested repos...")
 
@@ -84,7 +84,7 @@ func (t *AsyncTask) FetchNewlyRequestedRepo(wg *sync.WaitGroup) {
 }
 
 func (t *AsyncTask) CheckForUpdateOnAllRepo(wg *sync.WaitGroup) {
-	// Implement logic to check for updates on all repositories in the database
+	//  logic to check for updates on all repositories in the database
 	defer wg.Done()
 	for {
 		_, ok := <-t.CheckForUpdateOnAllRepoQueue

@@ -69,63 +69,50 @@ func (r *RepositoryRequester) doRequest(req *http.Request) (*http.Response, erro
 	return resp, nil
 }
 
-func (r *RepositoryRequester) GetRepositoryInfo(owner, repo string) (*dto.RepositoryInfoResponseDTO, error) {
-	// Implement logic to fetch repository info
-	url := fmt.Sprintf("https://api.github.com/repos/%s/%s", owner, repo)
+func (r *RepositoryRequester) fetchAndDecode(url string, result interface{}) error {
 	req, err := http.NewRequest(http.MethodGet, url, nil)
 	if err != nil {
-		return nil, err
+		return err
 	}
 	resp, err := r.doRequest(req)
 	if err != nil {
-		return nil, err
+		return err
 	}
 	defer resp.Body.Close()
 	if resp.StatusCode == http.StatusNotFound {
-		return nil, utils.ErrRepoNotFound
+		return utils.ErrRepoNotFound
 	}
+	if err := json.NewDecoder(resp.Body).Decode(result); err != nil {
+		return err
+	}
+	return nil
+}
 
+func (r *RepositoryRequester) GetRepositoryInfo(owner, repo string) (*dto.RepositoryInfoResponseDTO, error) {
+	// fetch repository info for owner
+	url := fmt.Sprintf("https://api.github.com/repos/%s/%s", owner, repo)
 	var repository dto.RepositoryInfoResponseDTO
-	if err := json.NewDecoder(resp.Body).Decode(&repository); err != nil {
+	if err := r.fetchAndDecode(url, &repository); err != nil {
 		return nil, err
 	}
 	return &repository, nil
 }
 func (r *RepositoryRequester) GetRepositoryCommits(owner, repo string) (*[]dto.CommitResponseDTO, error) {
-	// Implement logic to fetch repository commits
+	// logic to fetch repository commits
 	url := fmt.Sprintf("https://api.github.com/repos/%s/%s/commits", owner, repo)
-	req, err := http.NewRequest(http.MethodGet, url, nil)
-	if err != nil {
-		return nil, err
-	}
-	resp, err := r.doRequest(req)
-	if err != nil {
-		return nil, err
-	}
-	defer resp.Body.Close()
-
 	var commits []dto.CommitResponseDTO
-	if err := json.NewDecoder(resp.Body).Decode(&commits); err != nil {
+
+	if err := r.fetchAndDecode(url, &commits); err != nil {
 		return nil, err
 	}
 	return &commits, nil
 }
 
 func (r *RepositoryRequester) GetAllUserRepositories(owner string) (*[]dto.RepositoryInfoResponseDTO, error) {
-	// Implement logic to fetch all repositories for a user
+	//  logic to fetch all repositories for a user
 	url := fmt.Sprintf("https://api.github.com/users/%s/repos", owner)
-	req, err := http.NewRequest(http.MethodGet, url, nil)
-	if err != nil {
-		return nil, err
-	}
-	resp, err := r.doRequest(req)
-	if err != nil {
-		return nil, err
-	}
-	defer resp.Body.Close()
-
 	var repositories []dto.RepositoryInfoResponseDTO
-	if err := json.NewDecoder(resp.Body).Decode(&repositories); err != nil {
+	if err := r.fetchAndDecode(url, &repositories); err != nil {
 		return nil, err
 	}
 	return &repositories, nil
