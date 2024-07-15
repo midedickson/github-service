@@ -3,6 +3,7 @@ package mocks
 import (
 	"github.com/midedickson/github-service/dto"
 	"github.com/midedickson/github-service/models"
+	"github.com/midedickson/github-service/utils"
 	"github.com/stretchr/testify/mock"
 )
 
@@ -48,5 +49,10 @@ func (m *MockDBRepository) GetRepositoryCommits(repoName string) ([]*models.Comm
 
 func (m *MockDBRepository) GetAllRepositories() ([]*models.Repository, error) {
 	args := m.Called()
+	return args.Get(0).([]*models.Repository), args.Error(1)
+}
+
+func (m *MockDBRepository) SearchRepository(ownerID uint, repoSearchParams *utils.RepositorySearchParams) ([]*models.Repository, error) {
+	args := m.Called(ownerID, repoSearchParams)
 	return args.Get(0).([]*models.Repository), args.Error(1)
 }

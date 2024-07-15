@@ -6,6 +6,7 @@ import (
 
 	"github.com/midedickson/github-service/dto"
 	"github.com/midedickson/github-service/models"
+	"github.com/midedickson/github-service/utils"
 	"gorm.io/gorm"
 )
 
@@ -117,6 +118,27 @@ func (s *SqliteDBRepository) GetRepository(ownerID uint, repoName string) (*mode
 		return nil, err
 	}
 	return repo, nil
+}
+
+func (s *SqliteDBRepository) SearchRepository(ownerID uint, repoSearchParams *utils.RepositorySearchParams) ([]*models.Repository, error) {
+	// Implement logic to retrieve all repositories from the database
+	repos := &[]*models.Repository{}
+	dbQueryBuilder := s.DB.Preload("Owner").Where("owner_id =?", ownerID)
+	if repoSearchParams.TopStarsCount > 0 {
+		dbQueryBuilder = dbQueryBuilder.Order("stargazers_count DESC").Limit(repoSearchParams.TopStarsCount)
+	}
+	if repoSearchParams.Name != "" {
+		dbQueryBuilder = dbQueryBuilder.Where("name LIKE?", "%"+repoSearchParams.Name+"%")
+	}
+	if repoSearchParams.Language != "" {
+		dbQueryBuilder = dbQueryBuilder.Where("language =?", repoSearchParams.Language)
+	}
+
+	err := dbQueryBuilder.Find(&repos).Error
+	if err != nil {
+		return nil, err
+	}
+	return *repos, nil
 }
 
 func (s *SqliteDBRepository) GetAllRepositories() ([]*models.Repository, error) {

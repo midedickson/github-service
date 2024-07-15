@@ -1,7 +1,3 @@
-Sure! Here’s a detailed README documentation for your project. This README covers project setup, usage, testing, and other relevant details.
-
----
-
 # GitHub Service
 
 ## Overview

@@ -3,6 +3,7 @@ package database
 import (
 	"github.com/midedickson/github-service/dto"
 	"github.com/midedickson/github-service/models"
+	"github.com/midedickson/github-service/utils"
 )
 
 type DBRepository interface {
@@ -13,4 +14,5 @@ type DBRepository interface {
 	StoreRepositoryCommits(commitRepoInfos *[]dto.CommitResponseDTO, repoName string, owner *models.User) error
 	GetRepositoryCommits(repoName string) ([]*models.Commit, error)
 	GetAllRepositories() ([]*models.Repository, error)
+	SearchRepository(ownerID uint, repoSearchParams *utils.RepositorySearchParams) ([]*models.Repository, error)
 }
