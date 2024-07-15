@@ -16,6 +16,86 @@ import (
 	"github.com/stretchr/testify/mock"
 )
 
+func TestGetRepositoryCommits(t *testing.T) {
+	// Initialize the mocks
+	mockDBRepository := new(mocks.MockDBRepository)
+	mockRequester := new(mocks.MockRequester)
+	mockTask := new(mocks.MockTask)
+
+	// Create the controller with mocked dependencies
+	controller := controllers.NewController(mockRequester, mockDBRepository, mockTask)
+
+	// Test cases
+	tests := []struct {
+		name          string
+		repoName      string
+		mockSetup     func()
+		expectedCode  int
+		expectedError string
+	}{
+		{
+			name:          "Invalid repo path parameter",
+			repoName:      "",
+			mockSetup:     func() {},
+			expectedCode:  http.StatusBadRequest,
+			expectedError: "Invalid Payload",
+		},
+		{
+			name:     "Database error while fetching commits",
+			repoName: "testrepo",
+			mockSetup: func() {
+				mockDBRepository.On("GetRepositoryCommits", "testrepo").Return([]*models.Commit{}, assert.AnError)
+			},
+			expectedCode:  http.StatusInternalServerError,
+			expectedError: "assert.AnError general error for testing",
+		},
+		{
+			name:     "Successful fetch of repository commits",
+			repoName: "testrepox",
+			mockSetup: func() {
+				commits := []*models.Commit{
+					{SHA: "commitsha", Message: "commit message", Author: "author", Date: "date"},
+				}
+				mockDBRepository.On("GetRepositoryCommits", "testrepox").Return(commits, nil)
+			},
+			expectedCode:  http.StatusOK,
+			expectedError: "",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			// Set up the mocks
+			tt.mockSetup()
+
+			// Create a new HTTP request
+			req, _ := http.NewRequest("GET", "/repos/{repo}/commits", nil)
+			rr := httptest.NewRecorder()
+			req = mux.SetURLVars(req, map[string]string{"repo": tt.repoName})
+
+			// Call the GetRepositoryCommits method
+			controller.GetRepositoryCommits(rr, req)
+
+			// Check the response status code and body
+			assert.Equal(t, tt.expectedCode, rr.Code)
+			if tt.expectedError != "" {
+				var response utils.APIResponse
+				json.Unmarshal(rr.Body.Bytes(), &response)
+				assert.Equal(t, false, response.Success)
+				assert.Equal(t, tt.expectedError, response.Message)
+			} else {
+				var response utils.APIResponse
+				json.Unmarshal(rr.Body.Bytes(), &response)
+				assert.Equal(t, true, response.Success)
+				assert.Equal(t, "Repository Commits Fetched Successfully", response.Message)
+			}
+
+			// Assert that the expectations were met
+			mockDBRepository.AssertExpectations(t)
+		})
+	}
+}
+
 func TestGetRepositoryInfo(t *testing.T) {
 	// Initialize the mocks
 	mockDBRepository := new(mocks.MockDBRepository)

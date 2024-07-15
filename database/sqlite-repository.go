@@ -185,6 +185,7 @@ func (s *SqliteDBRepository) GetRepositoryCommits(repoName string) ([]*models.Co
 	commits := &[]*models.Commit{}
 	err := s.DB.Where("repository_name =?", repoName).Find(commits).Error
 	if err != nil {
+		log.Printf("%v", err)
 		return nil, err
 	}
 	return *commits, nil

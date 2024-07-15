@@ -1,6 +1,7 @@
 package controllers
 
 import (
+	"log"
 	"net/http"
 
 	"github.com/midedickson/github-service/utils"
@@ -60,6 +61,7 @@ func (c *Controller) GetRepositoryCommits(w http.ResponseWriter, r *http.Request
 	}
 	commits, err := c.dbRepository.GetRepositoryCommits(repoName)
 	if err != nil {
+		log.Printf("%v", err)
 		utils.Dispatch500Error(w, err)
 		return
 	}
