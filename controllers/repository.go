@@ -12,6 +12,19 @@ func (c *Controller) GetRepositoryInfo(w http.ResponseWriter, r *http.Request) {
 		utils.Dispatch400Error(w, "Invalid Payload", err)
 		return
 	}
+	if owner == "" {
+		utils.Dispatch400Error(w, "Invalid Payload", err)
+		return
+	}
+	repoName, err := utils.GetPathParam(r, "repo")
+	if err != nil {
+		utils.Dispatch400Error(w, "Invalid Payload", err)
+		return
+	}
+	if repoName == "" {
+		utils.Dispatch400Error(w, "Invalid Payload", err)
+		return
+	}
 	user, err := c.dbRepository.GetUser(owner)
 	if err != nil {
 		utils.Dispatch500Error(w, err)
@@ -19,11 +32,6 @@ func (c *Controller) GetRepositoryInfo(w http.ResponseWriter, r *http.Request) {
 	}
 	if user == nil {
 		utils.Dispatch404Error(w, "User with this github username not found, please register this github username", err)
-		return
-	}
-	repoName, err := utils.GetPathParam(r, "repo")
-	if err != nil {
-		utils.Dispatch400Error(w, "Invalid Payload", err)
 		return
 	}
 	repo, err := c.dbRepository.GetRepository(user.ID, repoName)
@@ -43,6 +51,10 @@ func (c *Controller) GetRepositoryInfo(w http.ResponseWriter, r *http.Request) {
 func (c *Controller) GetRepositoryCommits(w http.ResponseWriter, r *http.Request) {
 	repoName, err := utils.GetPathParam(r, "repo")
 	if err != nil {
+		utils.Dispatch400Error(w, "Invalid Payload", err)
+		return
+	}
+	if repoName == "" {
 		utils.Dispatch400Error(w, "Invalid Payload", err)
 		return
 	}

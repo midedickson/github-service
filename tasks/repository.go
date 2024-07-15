@@ -99,6 +99,7 @@ func (t *AsyncTask) CheckForUpdateOnAllRepo(wg *sync.WaitGroup) {
 		}
 
 		for _, repo := range allRepos {
+
 			log.Printf("Checking for updates on repo: %s...", repo.Name)
 			remoteRepoInfo, err := t.requester.GetRepositoryInfo(repo.Owner.Username, repo.Name)
 			if err != nil {
@@ -111,6 +112,8 @@ func (t *AsyncTask) CheckForUpdateOnAllRepo(wg *sync.WaitGroup) {
 					log.Println("Error in updating repository")
 				}
 			}
+			// simulate more processing to reduce wasting ratelimit requests
+			time.Sleep(90 * time.Second)
 
 		}
 		// trigger the update again after 3days (currently passed as seconds)

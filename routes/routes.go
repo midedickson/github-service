@@ -7,6 +7,6 @@ import (
 
 func ConnectRoutes(r *mux.Router, controller *controllers.Controller) {
 	r.HandleFunc("/register", controller.CreateUser).Methods("POST")
-	r.HandleFunc("/{owner}/repo/{repo}", controller.GetRepositoryInfo).Methods("GET")
-	r.HandleFunc("/{owner}/repo/{repo}/commits", controller.GetRepositoryCommits).Methods("GET")
+	r.HandleFunc("/{owner}/repos/{repo}", controller.GetRepositoryInfo).Methods("GET")
+	r.HandleFunc("/{owner}/repos/{repo}/commits", controller.GetRepositoryCommits).Methods("GET")
 }
