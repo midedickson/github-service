@@ -11,13 +11,13 @@ import (
 	"time"
 
 	"github.com/gorilla/mux"
-	"github.com/midedickson/github-service/interface/config"
+	"github.com/midedickson/github-service/config"
+	"github.com/midedickson/github-service/discovery"
 	"github.com/midedickson/github-service/interface/controllers"
 	"github.com/midedickson/github-service/interface/database"
-	"github.com/midedickson/github-service/interface/discovery"
+	tasks "github.com/midedickson/github-service/interface/task-manager"
 	"github.com/midedickson/github-service/requester"
 	"github.com/midedickson/github-service/routes"
-	tasks "github.com/midedickson/github-service/task-manager"
 	"github.com/midedickson/github-service/usecase"
 )
 

@@ -1,9 +1,9 @@
 package tasks
 
 import (
+	"github.com/midedickson/github-service/discovery"
 	"github.com/midedickson/github-service/dto"
 	"github.com/midedickson/github-service/entity"
-	"github.com/midedickson/github-service/interface/discovery"
 )
 
 type TaskManager struct {

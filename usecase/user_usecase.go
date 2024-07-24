@@ -6,7 +6,7 @@ import (
 	"github.com/midedickson/github-service/dto"
 	"github.com/midedickson/github-service/entity"
 	"github.com/midedickson/github-service/interface/repository"
-	tasks "github.com/midedickson/github-service/task-manager"
+	tasks "github.com/midedickson/github-service/interface/task-manager"
 )
 
 type UserUseCase interface {

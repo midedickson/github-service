@@ -12,11 +12,6 @@ func (t *TaskManager) GetAllRepoForUser(wg *sync.WaitGroup) {
 	defer wg.Done()
 	for user := range t.GetAllRepoForUserQueue {
 
-		// if !ok {
-		// 	log.Println("GetAllRepoForUserQueue channel closed")
-		// 	return
-		// }
-
 		// Handover task to repository discovery
 		wg.Add(1)
 		go t.repoDiscovery.GetAllUserRepositories(user, wg)
