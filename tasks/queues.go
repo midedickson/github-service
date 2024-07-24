@@ -3,10 +3,10 @@ package tasks
 import (
 	"log"
 
-	"github.com/midedickson/github-service/models"
+	"github.com/midedickson/github-service/interface/database"
 )
 
-func (t *AsyncTask) AddUserToGetAllRepoQueue(user *models.User) {
+func (t *AsyncTask) AddUserToGetAllRepoQueue(user *database.User) {
 	t.GetAllRepoForUserQueue <- user
 }
 

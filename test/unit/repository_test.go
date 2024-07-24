@@ -8,9 +8,8 @@ import (
 	"testing"
 
 	"github.com/gorilla/mux"
-	"github.com/midedickson/github-service/controllers"
-	"github.com/midedickson/github-service/mocks"
-	"github.com/midedickson/github-service/models"
+	"github.com/midedickson/github-service/interface/controllers"
+	"github.com/midedickson/github-service/test/mocks"
 	"github.com/midedickson/github-service/utils"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"

@@ -1,10 +1,10 @@
 package tasks
 
 import (
-	"github.com/midedickson/github-service/models"
+	"github.com/midedickson/github-service/interface/database"
 )
 
 type Task interface {
-	AddUserToGetAllRepoQueue(user *models.User)
+	AddUserToGetAllRepoQueue(user *database.User)
 	AddRequestToFetchNewlyRequestedRepoQueue(username, repoName string)
 }

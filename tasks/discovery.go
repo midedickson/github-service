@@ -27,7 +27,7 @@ func (t *AsyncTask) GetAllRepoForUser(wg *sync.WaitGroup) {
 			// using a go routine to optimize the saving of repositories and fetching the repo  commits
 			// this will help the worker process tasks from the channel faster for users at scale
 			for _, newRepoInfo := range *userRepositories {
-				_, err := t.dbRepository.StoreRepositoryInfo(&newRepoInfo, user)
+				_, err := t.repoRepository.StoreRepositoryInfo(&newRepoInfo, user)
 				if err != nil {
 					log.Printf("Error in storing repository: %v", err)
 					continue
@@ -38,7 +38,7 @@ func (t *AsyncTask) GetAllRepoForUser(wg *sync.WaitGroup) {
 					log.Printf("Error in fetching commits: %v", err)
 					continue
 				}
-				err = t.dbRepository.StoreRepositoryCommits(remoteCommits, newRepoInfo.Name, user)
+				err = t.commitRepository.StoreRepositoryCommits(remoteCommits, newRepoInfo.Name, user)
 				if err != nil {
 					log.Printf("Error in saving commits: %v", err)
 					continue
@@ -63,8 +63,8 @@ func (t *AsyncTask) FetchNewlyRequestedRepo(wg *sync.WaitGroup) {
 		if err != nil {
 			continue
 		}
-		user, _ := t.dbRepository.GetUser(repoRequest.Username)
-		repo, _ := t.dbRepository.StoreRepositoryInfo(remoteRepoInfo, user)
+		user, _ := t.userRepository.GetUser(repoRequest.Username)
+		repo, _ := t.repoRepository.StoreRepositoryInfo(remoteRepoInfo, user)
 		go func() {
 			log.Printf("fetching repository commits for repo: %s...", repoRequest.RepoName)
 			remoteCommits, err := t.requester.GetRepositoryCommits(user.Username, repo.Name)
@@ -72,7 +72,7 @@ func (t *AsyncTask) FetchNewlyRequestedRepo(wg *sync.WaitGroup) {
 				log.Printf("Error in fetching commits: %v", err)
 				return
 			}
-			err = t.dbRepository.StoreRepositoryCommits(remoteCommits, repo.Name, user)
+			err = t.commitRepository.StoreRepositoryCommits(remoteCommits, repo.Name, user)
 			if err != nil {
 				log.Printf("Error in saving commits: %v", err)
 				return
@@ -92,7 +92,7 @@ func (t *AsyncTask) CheckForUpdateOnAllRepo(wg *sync.WaitGroup) {
 			log.Println("No more signal to check for updates on all repositories")
 			return
 		}
-		allRepos, err := t.dbRepository.GetAllRepositories()
+		allRepos, err := t.repoRepository.GetAllRepositories()
 		if err != nil {
 			log.Printf("Error in fetching all repositories: %v", err)
 			return
@@ -107,7 +107,7 @@ func (t *AsyncTask) CheckForUpdateOnAllRepo(wg *sync.WaitGroup) {
 				continue
 			}
 			if repo.RemoteUpdatedAt != remoteRepoInfo.UpdatedAt {
-				_, err = t.dbRepository.StoreRepositoryInfo(remoteRepoInfo, repo.Owner)
+				_, err = t.repoRepository.StoreRepositoryInfo(remoteRepoInfo, repo.Owner)
 				if err != nil {
 					log.Println("Error in updating repository")
 				}
