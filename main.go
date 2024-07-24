@@ -11,8 +11,8 @@ import (
 	"time"
 
 	"github.com/gorilla/mux"
-	"github.com/midedickson/github-service/controllers"
-	"github.com/midedickson/github-service/database"
+	"github.com/midedickson/github-service/interface/controllers"
+	"github.com/midedickson/github-service/interface/database"
 	"github.com/midedickson/github-service/requester"
 	"github.com/midedickson/github-service/routes"
 	"github.com/midedickson/github-service/tasks"
@@ -27,9 +27,11 @@ func main() {
 	var wg sync.WaitGroup
 
 	repoRequester := requester.NewRepositoryRequester()
-	dbRepository := database.NewSqliteDBRepository(database.DB)
-	tasks := tasks.NewAsyncTask(repoRequester, dbRepository)
-	controller := controllers.NewController(repoRequester, dbRepository, tasks)
+	userRepository := database.NewSqliteUserRepository(database.DB)
+	repoRepository := database.NewSqliteRepoRepository(database.DB)
+	commitRepository := database.NewSqliteCommitRepository(database.DB)
+	tasks := tasks.NewAsyncTask(repoRequester, userRepository)
+	controller := controllers.NewController(repoRequester, userRepository, repoRepository, commitRepository, tasks)
 
 	// Start goroutines to fetch repositories and check for updates
 	wg.Add(1)

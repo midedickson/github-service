@@ -3,7 +3,6 @@ package database
 import (
 	"log"
 
-	"github.com/midedickson/github-service/models"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 )
@@ -23,7 +22,7 @@ func ConnectToDB() {
 
 func AutoMigrate() {
 	log.Println("Auto Migrating Models...")
-	err := DB.AutoMigrate(&models.Repository{}, &models.Commit{})
+	err := DB.AutoMigrate(&Repository{}, &Commit{}, &User{})
 	if err != nil {
 		panic(err)
 	}

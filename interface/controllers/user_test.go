@@ -24,7 +24,7 @@ func TestCreateUser(t *testing.T) {
 	mockTask := new(mocks.MockTask)
 
 	// Create the controller with mocked dependencies
-	controller := controllers.NewController(mockRequester, mockDBRepository, mockTask)
+	controller := controllers.NewController(mockRequester, mockDBRepository, mockDBRepository, mockDBRepository, mockTask)
 
 	// Define the input payload and the expected user
 	createUserPayload := &dto.CreateUserPayloadDTO{

@@ -1,6 +1,7 @@
-package models
+package database
 
 import (
+	"github.com/midedickson/github-service/entity"
 	"gorm.io/gorm"
 )
 
@@ -19,4 +20,22 @@ type Repository struct {
 	Watchers        int    `gorm:"watchers_count"`
 	RemoteCreatedAt string `gorm:"remote_created_at"`
 	RemoteUpdatedAt string `gorm:"remote_updated_at"`
+}
+
+func (model *Repository) ToEntity() *entity.Repository {
+	return &entity.Repository{
+		ID:              model.ID,
+		RemoteID:        model.RemoteID,
+		Owner:           model.Owner.ToEntity(),
+		Name:            model.Name,
+		Description:     model.Description,
+		URL:             model.URL,
+		Language:        model.Language,
+		ForksCount:      model.ForksCount,
+		StarsCount:      model.StarsCount,
+		OpenIssues:      model.OpenIssues,
+		Watchers:        model.Watchers,
+		RemoteCreatedAt: model.RemoteCreatedAt,
+		RemoteUpdatedAt: model.RemoteUpdatedAt,
+	}
 }

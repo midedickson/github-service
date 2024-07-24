@@ -1,6 +1,7 @@
-package models
+package database
 
 import (
+	"github.com/midedickson/github-service/entity"
 	"gorm.io/gorm"
 )
 
@@ -13,4 +14,16 @@ type Commit struct {
 	Date           string      `gorm:"string" json:"date"`
 	URL            string      `gorm:"html_url" json:"html_url"`
 	SHA            string      `gorm:"sha" json:"sha"`
+}
+
+func (model *Commit) ToEntity() *entity.Commit {
+	return &entity.Commit{
+		ID:         model.ID,
+		SHA:        model.SHA,
+		Repository: model.Repository.ToEntity(),
+		Message:    model.Message,
+		Author:     model.Author,
+		Date:       model.Date,
+		URL:        model.URL,
+	}
 }

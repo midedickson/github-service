@@ -19,7 +19,7 @@ func (c *Controller) CreateUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	user, err := c.dbRepository.CreateUser(&createUserPayload)
+	user, err := c.userRepository.CreateUser(&createUserPayload)
 	if err != nil {
 		utils.Dispatch500Error(w, err)
 		return

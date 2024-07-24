@@ -1,25 +1,31 @@
 package tasks
 
 import (
-	"github.com/midedickson/github-service/database"
-	"github.com/midedickson/github-service/models"
+	"github.com/midedickson/github-service/interface/database"
+	"github.com/midedickson/github-service/interface/repository"
 	"github.com/midedickson/github-service/requester"
 )
 
 type AsyncTask struct {
-	GetAllRepoForUserQueue       chan *models.User
+	GetAllRepoForUserQueue       chan *database.User
 	FetchNewlyRequestedRepoQueue chan *RepoRequest
 	CheckForUpdateOnAllRepoQueue chan string
 	requester                    requester.Requester
-	dbRepository                 database.DBRepository
+	userRepository               repository.UserRepository
+	repoRepository               repository.RepoRepository
+	commitRepository             repository.CommitRepository
 }
 
-func NewAsyncTask(requester requester.Requester, dbRepository database.DBRepository) *AsyncTask {
+func NewAsyncTask(requester requester.Requester, dbRepository database.DBRepository, userRepository repository.UserRepository,
+	repoRepository repository.RepoRepository,
+	commitRepository repository.CommitRepository) *AsyncTask {
 	return &AsyncTask{
-		GetAllRepoForUserQueue:       make(chan *models.User),
+		GetAllRepoForUserQueue:       make(chan *database.User),
 		FetchNewlyRequestedRepoQueue: make(chan *RepoRequest),
 		CheckForUpdateOnAllRepoQueue: make(chan string),
 		requester:                    requester,
-		dbRepository:                 dbRepository,
+		userRepository:               userRepository,
+		repoRepository:               repoRepository,
+		commitRepository:             commitRepository,
 	}
 }

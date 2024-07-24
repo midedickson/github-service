@@ -2,7 +2,7 @@ package routes
 
 import (
 	"github.com/gorilla/mux"
-	"github.com/midedickson/github-service/controllers"
+	"github.com/midedickson/github-service/interface/controllers"
 )
 
 func ConnectRoutes(r *mux.Router, controller *controllers.Controller) {

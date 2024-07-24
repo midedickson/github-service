@@ -26,7 +26,7 @@ func (c *Controller) GetRepositoryInfo(w http.ResponseWriter, r *http.Request) {
 		utils.Dispatch400Error(w, "Invalid Payload", err)
 		return
 	}
-	user, err := c.dbRepository.GetUser(owner)
+	user, err := c.userRepository.GetUser(owner)
 	if err != nil {
 		utils.Dispatch500Error(w, err)
 		return
@@ -35,7 +35,7 @@ func (c *Controller) GetRepositoryInfo(w http.ResponseWriter, r *http.Request) {
 		utils.Dispatch404Error(w, "User with this github username not found, please register this github username", err)
 		return
 	}
-	repo, err := c.dbRepository.GetRepository(user.ID, repoName)
+	repo, err := c.repoRepository.GetRepository(user.ID, repoName)
 	if err != nil {
 		utils.Dispatch500Error(w, err)
 		return
@@ -49,25 +49,6 @@ func (c *Controller) GetRepositoryInfo(w http.ResponseWriter, r *http.Request) {
 	utils.Dispatch200(w, "Repository Information Fetched Successfully", repo)
 }
 
-func (c *Controller) GetRepositoryCommits(w http.ResponseWriter, r *http.Request) {
-	repoName, err := utils.GetPathParam(r, "repo")
-	if err != nil {
-		utils.Dispatch400Error(w, "Invalid Payload", err)
-		return
-	}
-	if repoName == "" {
-		utils.Dispatch400Error(w, "Invalid Payload", err)
-		return
-	}
-	commits, err := c.dbRepository.GetRepositoryCommits(repoName)
-	if err != nil {
-		log.Printf("%v", err)
-		utils.Dispatch500Error(w, err)
-		return
-	}
-	utils.Dispatch200(w, "Repository Commits Fetched Successfully", commits)
-}
-
 func (c *Controller) GetRepositories(w http.ResponseWriter, r *http.Request) {
 	repoSearchParams := &utils.RepositorySearchParams{}
 	owner, err := utils.GetPathParam(r, "owner")
@@ -75,7 +56,7 @@ func (c *Controller) GetRepositories(w http.ResponseWriter, r *http.Request) {
 		utils.Dispatch400Error(w, "Invalid Payload", err)
 		return
 	}
-	user, err := c.dbRepository.GetUser(owner)
+	user, err := c.userRepository.GetUser(owner)
 	if err != nil {
 		utils.Dispatch500Error(w, err)
 		return
@@ -85,7 +66,7 @@ func (c *Controller) GetRepositories(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	utils.ParseQueryParams(r, repoSearchParams)
-	repositories, err := c.dbRepository.SearchRepository(user.ID, repoSearchParams)
+	repositories, err := c.repoRepository.SearchRepository(user.ID, repoSearchParams)
 	if err != nil {
 		log.Printf("%v", err)
 		utils.Dispatch500Error(w, err)
