@@ -18,10 +18,17 @@ func (c *Controller) CreateUser(w http.ResponseWriter, r *http.Request) {
 		utils.Dispatch400Error(w, "Invalid Payload", err)
 		return
 	}
+	if createUserPayload.Username == "" || createUserPayload.FullName == "" {
+		utils.Dispatch400Error(w, "Invalid Payload", nil)
+		return
+	}
 
 	user, err := c.userUseCase.CreateUser(&createUserPayload)
 	if err != nil {
+		log.Printf("Error occured while running %v", err)
 		utils.Dispatch500Error(w, err)
+		return
 	}
+
 	utils.Dispatch200(w, "user created successfully", user)
 }

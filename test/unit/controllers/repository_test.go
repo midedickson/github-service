@@ -2,322 +2,159 @@ package controllers_test
 
 import (
 	"encoding/json"
+	"errors"
 	"net/http"
 	"net/http/httptest"
-	"sync"
 	"testing"
 
 	"github.com/gorilla/mux"
+	"github.com/midedickson/github-service/entity"
 	"github.com/midedickson/github-service/interface/controllers"
 	"github.com/midedickson/github-service/test/mocks"
 	"github.com/midedickson/github-service/utils"
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/mock"
 )
 
-func TestGetRepositoryCommits(t *testing.T) {
-	// Initialize the mocks
-	mockDBRepository := new(mocks.MockDBRepository)
-	mockRequester := new(mocks.MockRequester)
-	mockTask := new(mocks.MockTask)
+func TestGetRepositoryInfo(t *testing.T) {
+	mockRepoUseCase := new(mocks.MockRepoUseCase)
+	controller := controllers.NewController(nil, nil, mockRepoUseCase, nil)
 
-	// Create the controller with mocked dependencies
-	controller := controllers.NewController(mockRequester, mockDBRepository, mockTask)
+	t.Run("successful fetch repository info", func(t *testing.T) {
+		// Create a new HTTP request
+		req, err := http.NewRequest("GET", "/{owner}/repos/{repo}", nil)
+		req = mux.SetURLVars(req, map[string]string{"owner": "testuser", "repo": "testrepo"})
+		assert.NoError(t, err)
 
-	// Test cases
-	tests := []struct {
-		name          string
-		repoName      string
-		mockSetup     func()
-		expectedCode  int
-		expectedError string
-	}{
-		{
-			name:          "Invalid repo path parameter",
-			repoName:      "",
-			mockSetup:     func() {},
-			expectedCode:  http.StatusBadRequest,
-			expectedError: "Invalid Payload",
-		},
-		{
-			name:     "Database error while fetching commits",
-			repoName: "testrepo",
-			mockSetup: func() {
-				mockDBRepository.On("GetRepositoryCommits", "testrepo").Return([]*models.Commit{}, assert.AnError)
-			},
-			expectedCode:  http.StatusInternalServerError,
-			expectedError: "assert.AnError general error for testing",
-		},
-		{
-			name:     "Successful fetch of repository commits",
-			repoName: "testrepox",
-			mockSetup: func() {
-				commits := []*models.Commit{
-					{SHA: "commitsha", Message: "commit message", Author: "author", Date: "date"},
-				}
-				mockDBRepository.On("GetRepositoryCommits", "testrepox").Return(commits, nil)
-			},
-			expectedCode:  http.StatusOK,
-			expectedError: "",
-		},
-	}
+		rr := httptest.NewRecorder()
+		owner := &entity.User{Username: "testuser"}
+		repo := &entity.Repository{Name: "testrepo", Owner: owner}
+		mockRepoUseCase.On("GetRepositoryInfo", "testuser", "testrepo").Return(repo, nil)
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			// Set up the mocks
-			tt.mockSetup()
+		http.HandlerFunc(controller.GetRepositoryInfo).ServeHTTP(rr, req)
 
-			// Create a new HTTP request
-			req, _ := http.NewRequest("GET", "/repos/{repo}/commits", nil)
-			rr := httptest.NewRecorder()
-			req = mux.SetURLVars(req, map[string]string{"repo": tt.repoName})
+		assert.Equal(t, http.StatusOK, rr.Code)
+		var response utils.APIResponse
+		json.Unmarshal(rr.Body.Bytes(), &response)
+		assert.Equal(t, true, response.Success)
+		assert.Equal(t, "Repository Information Fetched Successfully", response.Message)
+		mockRepoUseCase.AssertExpectations(t)
+	})
 
-			// Call the GetRepositoryCommits method
-			controller.GetRepositoryCommits(rr, req)
+	t.Run("invalid payload - missing owner", func(t *testing.T) {
+		req, err := http.NewRequest("GET", "/{owner}/repos/{repo}", nil)
+		req = mux.SetURLVars(req, map[string]string{"owner": "", "repo": "testrepo"})
+		assert.NoError(t, err)
 
-			// Check the response status code and body
-			assert.Equal(t, tt.expectedCode, rr.Code)
-			if tt.expectedError != "" {
-				var response utils.APIResponse
-				json.Unmarshal(rr.Body.Bytes(), &response)
-				assert.Equal(t, false, response.Success)
-				assert.Equal(t, tt.expectedError, response.Message)
-			} else {
-				var response utils.APIResponse
-				json.Unmarshal(rr.Body.Bytes(), &response)
-				assert.Equal(t, true, response.Success)
-				assert.Equal(t, "Repository Commits Fetched Successfully", response.Message)
-			}
+		rr := httptest.NewRecorder()
 
-			// Assert that the expectations were met
-			mockDBRepository.AssertExpectations(t)
-		})
-	}
+		http.HandlerFunc(controller.GetRepositoryInfo).ServeHTTP(rr, req)
+
+		assert.Equal(t, http.StatusBadRequest, rr.Code)
+		var response utils.APIResponse
+		json.Unmarshal(rr.Body.Bytes(), &response)
+		assert.Equal(t, false, response.Success)
+		assert.Equal(t, "Invalid Payload", response.Message)
+	})
+
+	t.Run("repository not found", func(t *testing.T) {
+		req, err := http.NewRequest("GET", "/{owner}/repos/{repo}", nil)
+		req = mux.SetURLVars(req, map[string]string{"owner": "testuser", "repo": "testrepox"})
+		assert.NoError(t, err)
+
+		rr := httptest.NewRecorder()
+
+		mockRepoUseCase.On("GetRepositoryInfo", "testuser", "testrepox").Return(nil, nil)
+
+		http.HandlerFunc(controller.GetRepositoryInfo).ServeHTTP(rr, req)
+
+		assert.Equal(t, http.StatusNotFound, rr.Code)
+		var response utils.APIResponse
+		json.Unmarshal(rr.Body.Bytes(), &response)
+		assert.Equal(t, false, response.Success)
+		assert.Equal(t, "Repository not found on Github; kindly check back again.", response.Message)
+		mockRepoUseCase.AssertExpectations(t)
+	})
+
+	t.Run("internal server error", func(t *testing.T) {
+		req, err := http.NewRequest("GET", "/{owner}/repos/{repo}", nil)
+		req = mux.SetURLVars(req, map[string]string{"owner": "testuser", "repo": "testrepoy"})
+		assert.NoError(t, err)
+
+		rr := httptest.NewRecorder()
+
+		mockRepoUseCase.On("GetRepositoryInfo", "testuser", "testrepoy").Return(nil, errors.New("some error"))
+
+		http.HandlerFunc(controller.GetRepositoryInfo).ServeHTTP(rr, req)
+
+		assert.Equal(t, http.StatusInternalServerError, rr.Code)
+		var response utils.APIResponse
+		json.Unmarshal(rr.Body.Bytes(), &response)
+		assert.Equal(t, false, response.Success)
+		assert.Equal(t, "some error", response.Message)
+		mockRepoUseCase.AssertExpectations(t)
+	})
 }
 
-func TestGetRepositoryInfo_InvalidOwnerPathParameter(t *testing.T) {
-	// Initialize the mocks
-	mockDBRepository := new(mocks.MockDBRepository)
-	mockRequester := new(mocks.MockRequester)
-	mockTask := new(mocks.MockTask)
+func TestGetRepositories(t *testing.T) {
+	mockRepoUseCase := new(mocks.MockRepoUseCase)
+	controller := controllers.NewController(nil, nil, mockRepoUseCase, nil)
 
-	// Create the controller with mocked dependencies
-	controller := controllers.NewController(mockRequester, mockDBRepository, mockTask)
+	t.Run("successful fetch repositories", func(t *testing.T) {
+		req, err := http.NewRequest("GET", "/{owner}/repos/", nil)
+		req = mux.SetURLVars(req, map[string]string{"owner": "testuser"})
+		assert.NoError(t, err)
 
-	// Create a new HTTP request
-	req, _ := http.NewRequest("GET", "/repos/{owner}/{repo}", nil)
-	rr := httptest.NewRecorder()
-	req = mux.SetURLVars(req, map[string]string{"owner": "", "repo": "testrepo"})
+		rr := httptest.NewRecorder()
+		owner := &entity.User{Username: "testuser"}
+		repositories := []*entity.Repository{
+			{Name: "repo1", Owner: owner},
+			{Name: "repo2", Owner: owner},
+		}
+		repoSearchParams := &utils.RepositorySearchParams{}
+		mockRepoUseCase.On("GetUserRepositories", "testuser", repoSearchParams).Return(repositories, nil)
 
-	// Call the GetRepositoryInfo method
-	controller.GetRepositoryInfo(rr, req)
+		http.HandlerFunc(controller.GetRepositories).ServeHTTP(rr, req)
 
-	// Check the response status code and body
-	assert.Equal(t, http.StatusBadRequest, rr.Code)
-	var response utils.APIResponse
-	json.Unmarshal(rr.Body.Bytes(), &response)
-	assert.Equal(t, false, response.Success)
-	assert.Equal(t, "Invalid Payload", response.Message)
+		assert.Equal(t, http.StatusOK, rr.Code)
+		var response utils.APIResponse
+		json.Unmarshal(rr.Body.Bytes(), &response)
+		assert.Equal(t, true, response.Success)
+		assert.Equal(t, "Repositories Fetched Successfully", response.Message)
+		mockRepoUseCase.AssertExpectations(t)
+	})
 
-	// Assert that the expectations were met
-	mockDBRepository.AssertExpectations(t)
-	mockTask.AssertExpectations(t)
-}
+	t.Run("invalid payload - missing owner", func(t *testing.T) {
+		req, err := http.NewRequest("GET", "/{owner}/repos/", nil)
+		req = mux.SetURLVars(req, map[string]string{"owner": ""})
+		assert.NoError(t, err)
 
-func TestGetRepositoryInfo_UserNotFoundInDatabase(t *testing.T) {
-	// Initialize the mocks
-	mockDBRepository := new(mocks.MockDBRepository)
-	mockRequester := new(mocks.MockRequester)
-	mockTask := new(mocks.MockTask)
+		rr := httptest.NewRecorder()
 
-	// Create the controller with mocked dependencies
-	controller := controllers.NewController(mockRequester, mockDBRepository, mockTask)
+		http.HandlerFunc(controller.GetRepositories).ServeHTTP(rr, req)
 
-	mockDBRepository.On("GetUser", "testuser").Return(nil, nil)
+		assert.Equal(t, http.StatusBadRequest, rr.Code)
+		var response utils.APIResponse
+		json.Unmarshal(rr.Body.Bytes(), &response)
+		assert.Equal(t, false, response.Success)
+		assert.Equal(t, "Invalid Payload", response.Message)
+	})
 
-	// Create a new HTTP request
-	req, _ := http.NewRequest("GET", "/repos/{owner}/{repo}", nil)
-	rr := httptest.NewRecorder()
-	req = mux.SetURLVars(req, map[string]string{"owner": "testuser", "repo": "testrepo"})
+	t.Run("internal server error", func(t *testing.T) {
+		req, err := http.NewRequest("GET", "/{owner}/repos/", nil)
+		req = mux.SetURLVars(req, map[string]string{"owner": "testuserx"})
+		assert.NoError(t, err)
 
-	// Call the GetRepositoryInfo method
-	controller.GetRepositoryInfo(rr, req)
+		rr := httptest.NewRecorder()
+		repoSearchParams := &utils.RepositorySearchParams{}
+		mockRepoUseCase.On("GetUserRepositories", "testuserx", repoSearchParams).Return(nil, errors.New("some error"))
 
-	// Check the response status code and body
-	assert.Equal(t, http.StatusNotFound, rr.Code)
-	var response utils.APIResponse
-	json.Unmarshal(rr.Body.Bytes(), &response)
-	assert.Equal(t, false, response.Success)
-	assert.Equal(t, "User with this github username not found, please register this github username", response.Message)
+		http.HandlerFunc(controller.GetRepositories).ServeHTTP(rr, req)
 
-	// Assert that the expectations were met
-	mockDBRepository.AssertExpectations(t)
-	mockTask.AssertExpectations(t)
-}
-
-func TestGetRepositoryInfo_DatabaseErrorWhileFetchingUser(t *testing.T) {
-	// Initialize the mocks
-	mockDBRepository := new(mocks.MockDBRepository)
-	mockRequester := new(mocks.MockRequester)
-	mockTask := new(mocks.MockTask)
-
-	// Create the controller with mocked dependencies
-	controller := controllers.NewController(mockRequester, mockDBRepository, mockTask)
-
-	mockDBRepository.On("GetUser", "testuser").Return(nil, assert.AnError)
-
-	// Create a new HTTP request
-	req, _ := http.NewRequest("GET", "/repos/{owner}/{repo}", nil)
-	rr := httptest.NewRecorder()
-	req = mux.SetURLVars(req, map[string]string{"owner": "testuser", "repo": "testrepo"})
-
-	// Call the GetRepositoryInfo method
-	controller.GetRepositoryInfo(rr, req)
-
-	// Check the response status code and body
-	assert.Equal(t, http.StatusInternalServerError, rr.Code)
-	var response utils.APIResponse
-	json.Unmarshal(rr.Body.Bytes(), &response)
-	assert.Equal(t, false, response.Success)
-	assert.Equal(t, "assert.AnError general error for testing", response.Message)
-
-	// Assert that the expectations were met
-	mockDBRepository.AssertExpectations(t)
-	mockTask.AssertExpectations(t)
-}
-
-func TestGetRepositoryInfo_InvalidRepoPathParameter(t *testing.T) {
-	// Initialize the mocks
-	mockDBRepository := new(mocks.MockDBRepository)
-	mockRequester := new(mocks.MockRequester)
-	mockTask := new(mocks.MockTask)
-
-	// Create the controller with mocked dependencies
-	controller := controllers.NewController(mockRequester, mockDBRepository, mockTask)
-
-	// Create a new HTTP request
-	req, _ := http.NewRequest("GET", "/repos/{owner}/{repo}", nil)
-	rr := httptest.NewRecorder()
-	req = mux.SetURLVars(req, map[string]string{"owner": "testuser", "repo": ""})
-
-	// Call the GetRepositoryInfo method
-	controller.GetRepositoryInfo(rr, req)
-
-	// Check the response status code and body
-	assert.Equal(t, http.StatusBadRequest, rr.Code)
-	var response utils.APIResponse
-	json.Unmarshal(rr.Body.Bytes(), &response)
-	assert.Equal(t, false, response.Success)
-	assert.Equal(t, "Invalid Payload", response.Message)
-
-	// Assert that the expectations were met
-	mockDBRepository.AssertExpectations(t)
-	mockTask.AssertExpectations(t)
-}
-
-func TestGetRepositoryInfo_RepositoryNotFoundInDatabase(t *testing.T) {
-	// Initialize the mocks
-	mockDBRepository := new(mocks.MockDBRepository)
-	mockRequester := new(mocks.MockRequester)
-	mockTask := new(mocks.MockTask)
-
-	// Create the controller with mocked dependencies
-	controller := controllers.NewController(mockRequester, mockDBRepository, mockTask)
-
-	user := &models.User{Username: "testuser"}
-	mockDBRepository.On("GetUser", "testuser").Return(user, nil)
-	mockDBRepository.On("GetRepository", user.ID, "testrepo").Return(nil, nil)
-
-	var wg sync.WaitGroup
-	wg.Add(1)
-	mockTask.On("AddRequestToFetchNewlyRequestedRepoQueue", "testuser", "testrepo").Run(func(args mock.Arguments) {
-		wg.Done()
-	}).Return()
-
-	// Create a new HTTP request
-	req, _ := http.NewRequest("GET", "/repos/{owner}/{repo}", nil)
-	rr := httptest.NewRecorder()
-	req = mux.SetURLVars(req, map[string]string{"owner": "testuser", "repo": "testrepo"})
-
-	// Call the GetRepositoryInfo method
-	controller.GetRepositoryInfo(rr, req)
-	wg.Wait()
-
-	// Check the response status code and body
-	assert.Equal(t, http.StatusNotFound, rr.Code)
-	var response utils.APIResponse
-	json.Unmarshal(rr.Body.Bytes(), &response)
-	assert.Equal(t, false, response.Success)
-	assert.Equal(t, "Repository not found on Github; kindly check back again.", response.Message)
-
-	// Assert that the expectations were met
-	mockDBRepository.AssertExpectations(t)
-	mockTask.AssertExpectations(t)
-}
-
-func TestGetRepositoryInfo_DatabaseErrorWhileFetchingRepository(t *testing.T) {
-	// Initialize the mocks
-	mockDBRepository := new(mocks.MockDBRepository)
-	mockRequester := new(mocks.MockRequester)
-	mockTask := new(mocks.MockTask)
-
-	// Create the controller with mocked dependencies
-	controller := controllers.NewController(mockRequester, mockDBRepository, mockTask)
-
-	user := &models.User{Username: "testuser"}
-	mockDBRepository.On("GetUser", "testuser").Return(user, nil)
-	mockDBRepository.On("GetRepository", user.ID, "testrepo").Return(nil, assert.AnError)
-
-	// Create a new HTTP request
-	req, _ := http.NewRequest("GET", "/repos/{owner}/{repo}", nil)
-	rr := httptest.NewRecorder()
-	req = mux.SetURLVars(req, map[string]string{"owner": "testuser", "repo": "testrepo"})
-
-	// Call the GetRepositoryInfo method
-	controller.GetRepositoryInfo(rr, req)
-
-	// Check the response status code and body
-	assert.Equal(t, http.StatusInternalServerError, rr.Code)
-	var response utils.APIResponse
-	json.Unmarshal(rr.Body.Bytes(), &response)
-	assert.Equal(t, false, response.Success)
-	assert.Equal(t, "assert.AnError general error for testing", response.Message)
-
-	// Assert that the expectations were met
-	mockDBRepository.AssertExpectations(t)
-	mockTask.AssertExpectations(t)
-}
-
-func TestGetRepositoryInfo_SuccessfulFetchOfRepositoryInformation(t *testing.T) {
-	// Initialize the mocks
-	mockDBRepository := new(mocks.MockDBRepository)
-	mockRequester := new(mocks.MockRequester)
-	mockTask := new(mocks.MockTask)
-
-	// Create the controller with mocked dependencies
-	controller := controllers.NewController(mockRequester, mockDBRepository, mockTask)
-
-	user := &models.User{Username: "testuser"}
-	repo := &models.Repository{Name: "testrepo"}
-	mockDBRepository.On("GetUser", "testuser").Return(user, nil)
-	mockDBRepository.On("GetRepository", user.ID, "testrepo").Return(repo, nil)
-
-	// Create a new HTTP request
-	req, _ := http.NewRequest("GET", "/repos/{owner}/{repo}", nil)
-	rr := httptest.NewRecorder()
-	req = mux.SetURLVars(req, map[string]string{"owner": "testuser", "repo": "testrepo"})
-
-	// Call the GetRepositoryInfo method
-	controller.GetRepositoryInfo(rr, req)
-
-	// Check the response status code and body
-	assert.Equal(t, http.StatusOK, rr.Code)
-	var response utils.APIResponse
-	json.Unmarshal(rr.Body.Bytes(), &response)
-	assert.Equal(t, true, response.Success)
-	assert.Equal(t, "Repository Information Fetched Successfully", response.Message)
-
-	// Assert that the expectations were met
-	mockDBRepository.AssertExpectations(t)
-	mockTask.AssertExpectations(t)
+		assert.Equal(t, http.StatusInternalServerError, rr.Code)
+		var response utils.APIResponse
+		json.Unmarshal(rr.Body.Bytes(), &response)
+		assert.Equal(t, false, response.Success)
+		assert.Equal(t, "some error", response.Message)
+		mockRepoUseCase.AssertExpectations(t)
+	})
 }

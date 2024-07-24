@@ -3,63 +3,81 @@ package controllers_test
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"net/http"
 	"net/http/httptest"
-	"sync"
 	"testing"
 
-	"github.com/midedickson/github-service/controllers"
 	"github.com/midedickson/github-service/dto"
-	"github.com/midedickson/github-service/mocks"
-	"github.com/midedickson/github-service/models"
+	"github.com/midedickson/github-service/entity"
+	"github.com/midedickson/github-service/interface/controllers"
+	"github.com/midedickson/github-service/test/mocks"
 	"github.com/midedickson/github-service/utils"
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/mock"
 )
 
 func TestCreateUser(t *testing.T) {
-	// Initialize the mocks
-	mockDBRepository := new(mocks.MockDBRepository)
-	mockRequester := new(mocks.MockRequester)
-	mockTask := new(mocks.MockTask)
+	mockUserUseCase := new(mocks.MockUserUseCase)
+	controller := controllers.NewController(nil, mockUserUseCase, nil, nil)
 
-	// Create the controller with mocked dependencies
-	controller := controllers.NewController(mockRequester, mockDBRepository, mockDBRepository, mockDBRepository, mockTask)
+	t.Run("successful create user", func(t *testing.T) {
+		payload := &dto.CreateUserPayloadDTO{
+			Username: "testuser",
+			FullName: "Test User",
+		}
+		payloadBytes, _ := json.Marshal(payload)
+		req, err := http.NewRequest("POST", "/register", bytes.NewBuffer(payloadBytes))
+		assert.NoError(t, err)
 
-	// Define the input payload and the expected user
-	createUserPayload := &dto.CreateUserPayloadDTO{
-		Username: "testuser",
-	}
-	user := &models.User{
-		Username: "testuser",
-	}
+		rr := httptest.NewRecorder()
 
-	// Set up the expectations
-	mockDBRepository.On("CreateUser", createUserPayload).Return(user, nil)
-	var wg sync.WaitGroup
-	wg.Add(1)
-	mockTask.On("AddUserToGetAllRepoQueue", user).Run(func(args mock.Arguments) {
-		wg.Done()
-	}).Return()
+		user := &entity.User{Username: "testuser", FullName: "Test User", ID: 1}
+		mockUserUseCase.On("CreateUser", payload).Return(user, nil)
 
-	// Create a new HTTP request with the input payload
-	body, _ := json.Marshal(createUserPayload)
-	req, _ := http.NewRequest("POST", "/register", bytes.NewBuffer(body))
-	rr := httptest.NewRecorder()
+		http.HandlerFunc(controller.CreateUser).ServeHTTP(rr, req)
 
-	// Call the CreateUser method
-	controller.CreateUser(rr, req)
-	wg.Wait()
+		assert.Equal(t, http.StatusOK, rr.Code)
+		var response utils.APIResponse
+		json.Unmarshal(rr.Body.Bytes(), &response)
+		assert.Equal(t, true, response.Success)
+		assert.Equal(t, "user created successfully", response.Message)
+		mockUserUseCase.AssertExpectations(t)
+	})
 
-	// Check the response status code and body
-	assert.Equal(t, http.StatusOK, rr.Code)
-	var response utils.APIResponse
-	json.Unmarshal(rr.Body.Bytes(), &response)
-	assert.Equal(t, true, response.Success)
-	assert.Equal(t, "user created successfully", response.Message)
+	t.Run("invalid payload", func(t *testing.T) {
+		req, err := http.NewRequest("POST", "/register", bytes.NewBuffer([]byte(`{"invalid": "payload"}`)))
+		assert.NoError(t, err)
 
-	// Assert that the expectations were met
-	mockDBRepository.AssertExpectations(t)
-	mockTask.AssertExpectations(t)
-	mockRequester.AssertExpectations(t)
+		rr := httptest.NewRecorder()
+
+		http.HandlerFunc(controller.CreateUser).ServeHTTP(rr, req)
+
+		assert.Equal(t, http.StatusBadRequest, rr.Code)
+		var response utils.APIResponse
+		json.Unmarshal(rr.Body.Bytes(), &response)
+		assert.Equal(t, false, response.Success)
+		assert.Equal(t, "Invalid Payload", response.Message)
+	})
+
+	t.Run("create user error", func(t *testing.T) {
+		payload := &dto.CreateUserPayloadDTO{
+			Username: "testuserx",
+			FullName: "Test User",
+		}
+		payloadBytes, _ := json.Marshal(payload)
+		req, err := http.NewRequest("POST", "/register", bytes.NewBuffer(payloadBytes))
+		assert.NoError(t, err)
+
+		rr := httptest.NewRecorder()
+
+		mockUserUseCase.On("CreateUser", payload).Return(nil, errors.New("some error"))
+
+		http.HandlerFunc(controller.CreateUser).ServeHTTP(rr, req)
+
+		assert.Equal(t, http.StatusInternalServerError, rr.Code)
+		var response utils.APIResponse
+		json.Unmarshal(rr.Body.Bytes(), &response)
+		assert.Equal(t, false, response.Success)
+		mockUserUseCase.AssertExpectations(t)
+	})
 }

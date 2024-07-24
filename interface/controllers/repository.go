@@ -1,6 +1,7 @@
 package controllers
 
 import (
+	"log"
 	"net/http"
 
 	"github.com/midedickson/github-service/utils"
@@ -9,25 +10,30 @@ import (
 func (c *Controller) GetRepositoryInfo(w http.ResponseWriter, r *http.Request) {
 	owner, err := utils.GetPathParam(r, "owner")
 	if err != nil {
+		log.Printf("Error in parsing owner: %v", err)
 		utils.Dispatch400Error(w, "Invalid Payload", err)
 		return
 	}
 	if owner == "" {
+		log.Printf("Empty owner: %v", owner)
 		utils.Dispatch400Error(w, "Invalid Payload", err)
 		return
 	}
 	repoName, err := utils.GetPathParam(r, "repo")
 	if err != nil {
+		log.Printf("Error in parsing repo: %v", err)
 		utils.Dispatch400Error(w, "Invalid Payload", err)
 		return
 	}
 	if repoName == "" {
+		log.Printf("Empty repoName: %v", repoName)
 		utils.Dispatch400Error(w, "Invalid Payload", err)
 		return
 	}
 
 	repo, err := c.repoUsecase.GetRepositoryInfo(owner, repoName)
 	if err != nil {
+		log.Printf("Error in use case: %v", err)
 		utils.Dispatch500Error(w, err)
 		return
 	}
