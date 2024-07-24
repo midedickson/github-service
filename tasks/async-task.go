@@ -16,9 +16,11 @@ type AsyncTask struct {
 	commitRepository             repository.CommitRepository
 }
 
-func NewAsyncTask(requester requester.Requester, dbRepository database.DBRepository, userRepository repository.UserRepository,
+func NewAsyncTask(requester requester.Requester,
+	userRepository repository.UserRepository,
 	repoRepository repository.RepoRepository,
-	commitRepository repository.CommitRepository) *AsyncTask {
+	commitRepository repository.CommitRepository,
+) *AsyncTask {
 	return &AsyncTask{
 		GetAllRepoForUserQueue:       make(chan *database.User),
 		FetchNewlyRequestedRepoQueue: make(chan *RepoRequest),

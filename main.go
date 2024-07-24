@@ -30,7 +30,7 @@ func main() {
 	userRepository := database.NewSqliteUserRepository(database.DB)
 	repoRepository := database.NewSqliteRepoRepository(database.DB)
 	commitRepository := database.NewSqliteCommitRepository(database.DB)
-	tasks := tasks.NewAsyncTask(repoRequester, userRepository)
+	tasks := tasks.NewAsyncTask(repoRequester, userRepository, repoRepository, commitRepository)
 	controller := controllers.NewController(repoRequester, userRepository, repoRepository, commitRepository, tasks)
 
 	// Start goroutines to fetch repositories and check for updates
