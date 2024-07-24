@@ -1,4 +1,4 @@
-package tasks
+package dto
 
 type RepoRequest struct {
 	Username string

@@ -11,38 +11,60 @@ import (
 	"time"
 
 	"github.com/gorilla/mux"
+	"github.com/midedickson/github-service/interface/config"
 	"github.com/midedickson/github-service/interface/controllers"
 	"github.com/midedickson/github-service/interface/database"
+	"github.com/midedickson/github-service/interface/discovery"
 	"github.com/midedickson/github-service/requester"
 	"github.com/midedickson/github-service/routes"
-	"github.com/midedickson/github-service/tasks"
+	tasks "github.com/midedickson/github-service/task-manager"
+	"github.com/midedickson/github-service/usecase"
 )
 
 func main() {
 	log.Println("Starting server...")
 
-	database.ConnectToDB()
+	// loading configuration file and get Database URL
+	dbUrl := config.GetDBUrl()
+
+	database.ConnectToDB(dbUrl)
 	database.AutoMigrate()
 	// Use a WaitGroup to manage goroutines
 	var wg sync.WaitGroup
 
 	repoRequester := requester.NewRepositoryRequester()
+
+	// databasae repositories for each domain/service
 	userRepository := database.NewSqliteUserRepository(database.DB)
 	repoRepository := database.NewSqliteRepoRepository(database.DB)
 	commitRepository := database.NewSqliteCommitRepository(database.DB)
-	tasks := tasks.NewAsyncTask(repoRequester, userRepository, repoRepository, commitRepository)
-	controller := controllers.NewController(repoRequester, userRepository, repoRepository, commitRepository, tasks)
 
-	// Start goroutines to fetch repositories and check for updates
-	wg.Add(1)
-	go tasks.GetAllRepoForUser(&wg)
-	wg.Add(1)
-	go tasks.FetchNewlyRequestedRepo(&wg)
-	wg.Add(1)
-	go tasks.CheckForUpdateOnAllRepo(&wg)
-	go tasks.AddSignalToCheckForUpdateOnAllRepoQueue()
+	// repo discovery for executing tasks relating to finding repositories
+	repoDiscovery := discovery.NewRepositoryDiscoveryService(repoRequester, userRepository, repoRepository, commitRepository)
 
-	// create mux router
+	// task manager for managing the queueing and execution of tasks
+	taskManager := tasks.NewTaskManager(repoDiscovery)
+
+	// Usecase services for each domain/service
+	userUseCase := usecase.NewUserUseCaseService(userRepository, taskManager)
+	repoUseCase := usecase.NewRepoUseCaseService(repoRepository, userUseCase, taskManager)
+	commitUseCase := usecase.NewCommitUseCaseService(commitRepository)
+
+	// creation of application handler
+	controller := controllers.NewController(repoRequester, userUseCase, repoUseCase, commitUseCase)
+
+	// Starting goroutines to fetch repositories and check for updates
+	wg.Add(1)
+	go taskManager.GetAllRepoForUser(&wg)
+	wg.Add(1)
+	go taskManager.FetchNewlyRequestedRepo(&wg)
+	wg.Add(1)
+	go taskManager.CheckForUpdateOnAllRepo(&wg)
+
+	// start the task for updating all repositories
+	go taskManager.AddSignalToCheckForUpdateOnAllRepoQueue()
+
+	// create mux router and connect handlers to router
 	r := mux.NewRouter()
 	routes.ConnectRoutes(r, controller)
 
@@ -66,9 +88,9 @@ func main() {
 	defer cancel()
 
 	// Close channels to signal workers to stop
-	close(tasks.GetAllRepoForUserQueue)
-	close(tasks.FetchNewlyRequestedRepoQueue)
-	close(tasks.CheckForUpdateOnAllRepoQueue)
+	close(taskManager.GetAllRepoForUserQueue)
+	close(taskManager.FetchNewlyRequestedRepoQueue)
+	close(taskManager.CheckForUpdateOnAllRepoQueue)
 
 	// Wait for all goroutines to complete
 	wg.Wait()

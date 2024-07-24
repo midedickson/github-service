@@ -17,7 +17,7 @@ func (c *Controller) GetRepositoryCommits(w http.ResponseWriter, r *http.Request
 		utils.Dispatch400Error(w, "Invalid Payload", err)
 		return
 	}
-	commits, err := c.commitRepository.GetRepositoryCommits(repoName)
+	commits, err := c.commitUsecase.GetRepositoryCommits(repoName)
 	if err != nil {
 		log.Printf("%v", err)
 		utils.Dispatch500Error(w, err)

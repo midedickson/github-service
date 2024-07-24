@@ -19,11 +19,9 @@ func (c *Controller) CreateUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	user, err := c.userRepository.CreateUser(&createUserPayload)
+	user, err := c.userUseCase.CreateUser(&createUserPayload)
 	if err != nil {
 		utils.Dispatch500Error(w, err)
-		return
 	}
-	go c.task.AddUserToGetAllRepoQueue(user)
 	utils.Dispatch200(w, "user created successfully", user)
 }

@@ -11,8 +11,8 @@ var (
 	DB *gorm.DB
 )
 
-func ConnectToDB() {
-	d, err := gorm.Open(sqlite.Open("db.sqlite"), &gorm.Config{})
+func ConnectToDB(url string) {
+	d, err := gorm.Open(sqlite.Open(url), &gorm.Config{})
 	if err != nil {
 		panic(err)
 	}
