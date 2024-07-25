@@ -63,12 +63,28 @@ func (cd *CommitDiscoveryService) GetCommitsForNewRepo(repo *entity.Repository) 
 		log.Printf("Error in fetching commits: %v", err)
 		return err
 	}
+	cd.UpdateAuthorCountInNewCommits(*remoteCommits)
 	err = cd.commitRepository.StoreRepositoryCommits(remoteCommits, repo.Name, repo.Owner)
 	if err != nil {
 		log.Printf("Error in saving commits: %v", err)
 		return err
 	}
 	return nil
+}
+
+func (cd *CommitDiscoveryService) UpdateAuthorCountInNewCommits(remoteCommits []dto.CommitResponseDTO) {
+	authorCommitCounts := make(map[string]int)
+	for _, c := range remoteCommits {
+		_, ok := authorCommitCounts[c.Author]
+		if !ok {
+			authorCommitCounts[c.Author] = 1
+		} else {
+			authorCommitCounts[c.Author]++
+		}
+	}
+	for author := range authorCommitCounts {
+		cd.commitRepository.AddAuthorCommitCount(author, authorCommitCounts[author])
+	}
 }
 
 func (cd *CommitDiscoveryService) ResetCommitToSHA(repoName, resetSha string) error {

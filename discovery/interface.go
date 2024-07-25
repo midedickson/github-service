@@ -8,7 +8,7 @@ import (
 )
 
 type RepositoryDiscovery interface {
-	GetAllUserRepositories(user *entity.User, wg *sync.WaitGroup)
+	GetAllUserRepositories(user *entity.User)
 	FetchNewlyRequestedRepo(repoRequest *dto.RepoRequest, wg *sync.WaitGroup)
 	CheckForUpdateOnAllRepo() error
 }

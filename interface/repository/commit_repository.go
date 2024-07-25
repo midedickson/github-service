@@ -12,4 +12,5 @@ type CommitRepository interface {
 	GetMostRecentCommitInRepository(repoName string) (*database.Commit, error)
 	DeleteUntilSHA(repoName, sha string) error
 	FindTopNAuthorsByCommitCounts(topN int) ([]*database.AuthorCommitCount, error)
+	AddAuthorCommitCount(author string, count int) error
 }

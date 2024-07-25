@@ -117,6 +117,29 @@ func (s *SqliteCommitRepository) DeleteUntilSHA(repoName, sha string) error {
 	return nil
 }
 
+func (s *SqliteCommitRepository) AddAuthorCommitCount(author string, count int) error {
+	authorCommitCount := &AuthorCommitCount{}
+	err := s.DB.Where("author =?", author).First(authorCommitCount).Error
+	if err != nil {
+		if err == gorm.ErrRecordNotFound {
+			newAuthorCommitCount := &AuthorCommitCount{
+				Author:      author,
+				CommitCount: count,
+			}
+			err = s.DB.Create(newAuthorCommitCount).Error
+			if err != nil {
+				log.Printf("Error creating author commit count for author %s: %v", author, err)
+				return err
+			}
+		} else {
+			log.Printf("Error fetching author commit count for author %s: %v", author, err)
+			return err
+		}
+	}
+	authorCommitCount.CommitCount += count
+	return s.DB.Save(authorCommitCount).Error
+}
+
 func (s *SqliteCommitRepository) FindTopNAuthorsByCommitCounts(topN int) ([]*AuthorCommitCount, error) {
 	authorCounts := &[]*AuthorCommitCount{}
 	err := s.DB.Order("commit_count DESC").Limit(topN).Find(authorCounts).Error
