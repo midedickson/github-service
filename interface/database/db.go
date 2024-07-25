@@ -12,7 +12,11 @@ var (
 )
 
 func ConnectToDB(url string) {
-	d, err := gorm.Open(sqlite.Open(url), &gorm.Config{})
+	dbUrl := url
+	if dbUrl == "" {
+		dbUrl = ":memory:"
+	}
+	d, err := gorm.Open(sqlite.Open(dbUrl), &gorm.Config{})
 	if err != nil {
 		panic(err)
 	}

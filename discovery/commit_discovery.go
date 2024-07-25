@@ -3,6 +3,7 @@ package discovery
 import (
 	"log"
 
+	"github.com/midedickson/github-service/config"
 	"github.com/midedickson/github-service/dto"
 	"github.com/midedickson/github-service/entity"
 	"github.com/midedickson/github-service/interface/repository"
@@ -13,6 +14,8 @@ type CommitDiscoveryService struct {
 	repoRepository   repository.RepoRepository
 	commitRepository repository.CommitRepository
 	requester        requester.Requester
+	startDateLimit   string
+	endDateLimit     string
 }
 
 func NewCommitDiscoveryService(repoRepository repository.RepoRepository,
@@ -22,6 +25,8 @@ func NewCommitDiscoveryService(repoRepository repository.RepoRepository,
 		repoRepository:   repoRepository,
 		commitRepository: commitRepository,
 		requester:        requester,
+		startDateLimit:   config.GetCommitStartDate(),
+		endDateLimit:     config.GetCommitEndDate(),
 	}
 }
 
@@ -43,7 +48,7 @@ func (cd *CommitDiscoveryService) CheckForNewCommits(repo *entity.Repository) er
 		log.Printf("Error in fetching most recent commit SHA: %v", err)
 		return err
 	}
-	newRemoteCommits, err := cd.requester.GetRepositoryCommits(repo.Owner.Username, repo.Name, &dto.CommitQueryParams{SHA: mostRecentSHA})
+	newRemoteCommits, err := cd.requester.GetRepositoryCommits(repo.Owner.Username, repo.Name, &dto.CommitQueryParams{SHA: mostRecentSHA, Since: cd.startDateLimit, Until: cd.endDateLimit})
 	if err != nil {
 		log.Printf("Error in fetching new commits: %v", err)
 		return err
@@ -58,7 +63,7 @@ func (cd *CommitDiscoveryService) CheckForNewCommits(repo *entity.Repository) er
 
 func (cd *CommitDiscoveryService) GetCommitsForNewRepo(repo *entity.Repository) error {
 	log.Printf("fetching repository commits for repo: %s...", repo.Name)
-	remoteCommits, err := cd.requester.GetRepositoryCommits(repo.Owner.Username, repo.Name, nil)
+	remoteCommits, err := cd.requester.GetRepositoryCommits(repo.Owner.Username, repo.Name, &dto.CommitQueryParams{Since: cd.startDateLimit, Until: cd.endDateLimit})
 	if err != nil {
 		log.Printf("Error in fetching commits: %v", err)
 		return err

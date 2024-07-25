@@ -17,3 +17,11 @@ func init() {
 func GetDBUrl() string {
 	return os.Getenv("DATABASE_URL")
 }
+
+func GetCommitStartDate() string {
+	return os.Getenv("COMMIT_START_DATE")
+}
+
+func GetCommitEndDate() string {
+	return os.Getenv("COMMIT_END_DATE")
+}

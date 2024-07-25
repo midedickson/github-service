@@ -1,8 +1,9 @@
 package dto
 
 type CommitQueryParams struct {
-	SHA  string
-	Date string
+	SHA   string
+	Since string
+	Until string
 }
 
 func (p CommitQueryParams) String() string {
@@ -10,11 +11,17 @@ func (p CommitQueryParams) String() string {
 	if p.SHA != "" {
 		queryString += "sha=" + p.SHA
 	}
-	if p.Date != "" {
+	if p.Since != "" {
 		if queryString != "" {
 			queryString += "&"
 		}
-		queryString += "date=" + p.Date
+		queryString += "since=" + p.Since
+	}
+	if p.Until != "" {
+		if queryString != "" {
+			queryString += "&"
+		}
+		queryString += "until=" + p.Until
 	}
 	if queryString != "" {
 		return "?" + queryString
