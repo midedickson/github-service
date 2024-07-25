@@ -57,14 +57,15 @@ func (s *SqliteRepoRepository) StoreRepositoryInfo(remoteRepoInfo *dto.Repositor
 	if err != nil {
 		return nil, err
 	}
-
-	return newRepo, nil
+	var repository Repository
+	s.DB.Preload("Owner").First(&repository, newRepo.ID)
+	return &repository, nil
 }
 
 func (s *SqliteRepoRepository) GetRepositoryInfoByRemoteId(remoteID int) (*Repository, error) {
 	//  logic to retrieve repository info from the database by remote ID
 	repo := &Repository{}
-	err := s.DB.Where("remote_id =?", remoteID).First(repo).Error
+	err := s.DB.Where("remote_id =?", remoteID).Preload("Owner").First(repo).Error
 	if err != nil {
 		if err == gorm.ErrRecordNotFound {
 			return nil, nil
@@ -101,7 +102,7 @@ func (s *SqliteRepoRepository) SearchRepository(ownerID uint, repoSearchParams *
 		dbQueryBuilder = dbQueryBuilder.Where("language =?", repoSearchParams.Language)
 	}
 
-	err := dbQueryBuilder.Find(&repos).Error
+	err := dbQueryBuilder.Preload("Owner").Find(&repos).Error
 	if err != nil {
 		return nil, err
 	}

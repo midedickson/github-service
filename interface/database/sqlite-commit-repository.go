@@ -83,7 +83,7 @@ func (s *SqliteCommitRepository) GetRepositoryCommits(repoName string) ([]*Commi
 
 func (s *SqliteCommitRepository) GetMostRecentCommitInRepository(repoName string) (*Commit, error) {
 	commit := &Commit{}
-	err := s.DB.Where("repository_name =?", repoName).Order("CreatedAt DESC").First(commit).Error
+	err := s.DB.Where("repository_name =?", repoName).Order("created_at DESC").First(commit).Error
 	if err != nil {
 		if err == gorm.ErrRecordNotFound {
 			return nil, nil
@@ -97,7 +97,7 @@ func (s *SqliteCommitRepository) DeleteUntilSHA(repoName, sha string) error {
 	allCommits := &[]*Commit{}
 
 	// get all the commits in descending order of when they were created
-	err := s.DB.Where("repository_name =?", repoName).Order("CreatedAt DESC").Find(allCommits).Error
+	err := s.DB.Where("repository_name =?", repoName).Order("created_at DESC").Find(allCommits).Error
 	if err != nil {
 		log.Printf("Error fetching all commits in created at order: %v", err)
 		return err
