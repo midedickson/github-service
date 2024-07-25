@@ -109,6 +109,10 @@ Example: Get the top 3 authors by commit count.
 
 https://www.loom.com/share/67491e4aeec64cb6be3e86ef0e376176?sid=7cb07326-428f-4fc2-a9ac-f29f3b13601e
 
+### Endpoint and Unit Test Demo:
+
+https://www.loom.com/share/12f4fbce610a40048eab4d26d43a4bc8?sid=858c5c8d-68f4-4e08-98b0-b7ea42c370e6
+
 ## Running Tests
 
 The project includes unit tests for the controller methods. To run the tests, use the following command:
