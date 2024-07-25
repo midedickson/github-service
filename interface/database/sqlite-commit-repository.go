@@ -94,7 +94,7 @@ func (s *SqliteCommitRepository) GetMostRecentCommitInRepository(repoName string
 }
 
 func (s *SqliteCommitRepository) DeleteUntilSHA(repoName, sha string) error {
-	allCommits := []*Commit{}
+	allCommits := &[]*Commit{}
 
 	// get all the commits in descending order of when they were created
 	err := s.DB.Where("repository_name =?", repoName).Order("CreatedAt DESC").Find(allCommits).Error
@@ -103,7 +103,7 @@ func (s *SqliteCommitRepository) DeleteUntilSHA(repoName, sha string) error {
 		return err
 	}
 	// we remove all the items from the most recent commits to the preferred sha we want to resr into
-	for _, commit := range allCommits {
+	for _, commit := range *allCommits {
 		if commit.SHA == sha {
 			break
 		}
@@ -115,4 +115,14 @@ func (s *SqliteCommitRepository) DeleteUntilSHA(repoName, sha string) error {
 	}
 
 	return nil
+}
+
+func (s *SqliteCommitRepository) FindTopNAuthorsByCommitCounts(topN int) ([]*AuthorCommitCount, error) {
+	authorCounts := &[]*AuthorCommitCount{}
+	err := s.DB.Order("commit_count DESC").Limit(topN).Find(authorCounts).Error
+	if err != nil {
+		log.Printf("Error fetching top %d authors by commit counts: %v", topN, err)
+		return nil, err
+	}
+	return *authorCounts, nil
 }

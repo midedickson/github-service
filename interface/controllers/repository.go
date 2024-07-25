@@ -51,7 +51,7 @@ func (c *Controller) GetRepositories(w http.ResponseWriter, r *http.Request) {
 		utils.Dispatch400Error(w, "Invalid Payload", err)
 		return
 	}
-	utils.ParseQueryParams(r, repoSearchParams)
+	utils.ParseRepoSearchQueryParams(r, repoSearchParams)
 	repositories, err := c.repoUsecase.GetUserRepositories(owner, repoSearchParams)
 	if err != nil {
 		utils.Dispatch500Error(w, err)

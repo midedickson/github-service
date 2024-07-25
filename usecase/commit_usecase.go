@@ -11,6 +11,7 @@ import (
 type CommitUseCase interface {
 	GetRepositoryCommits(repoName string) ([]*entity.Commit, error)
 	MakeRepoResetRequest(owner, repoName, resetSHA string) error
+	GetTopNAuthorsByCommits(topN int) ([]*entity.AuthorCommitCount, error)
 }
 
 type CommitUseCaseService struct {
@@ -47,4 +48,16 @@ func (c *CommitUseCaseService) MakeRepoResetRequest(owner, repoName, resetSHA st
 
 	go c.task.AddRequestToResetRepositoryQueue(repoName, resetSHA)
 	return nil
+}
+
+func (c *CommitUseCaseService) GetTopNAuthorsByCommits(topN int) ([]*entity.AuthorCommitCount, error) {
+	topAuthors, err := c.commitRepository.FindTopNAuthorsByCommitCounts(topN)
+	if err != nil {
+		return nil, err
+	}
+	topAuthorsEntities := make([]*entity.AuthorCommitCount, len(topAuthors))
+	for i, commit := range topAuthors {
+		topAuthorsEntities[i] = commit.ToEntity()
+	}
+	return topAuthorsEntities, nil
 }
