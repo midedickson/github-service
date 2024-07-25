@@ -73,35 +73,101 @@ Find the documentation to the API endpoints here: https://documenter.getpostman.
 
 ## Usage
 
-#### Register a New User:
-
-Use the /register endpoint to register a new user.
-Example: Register a user with username "chromium" and full name "Test User".
-
-#### Get Repositories for a User:
-
-Use the /{owner}/repos endpoint to fetch all repositories for a user.
-Example: Fetch all repositories for the user "chromium".
-
-#### Get Information for a Specific Repository:
-
-Use the /{owner}/repos/{repo} endpoint to get detailed information about a specific repository.
-Example: Get information for the repository "chromium" owned by "chromium".
-
 #### Get All Commits for a Repository:
 
-Use the /{owner}/repos/{repo}/commits endpoint to get all commits for a repository.
-Example: Fetch all commits for the repository "chromium" owned by "chromium".
+- Commits are already stored in the database with a foreignKey to the repository with the repository name being the reference attached to the commit table.
 
-#### Request a Repository Reset:
+```go
+type Commit struct {
+	gorm.Model
+	RepositoryName string      `gorm:"repository_name"`
+	Repository     *Repository `gorm:"foreignKey:RepositoryName"`
+	Message        string      `gorm:"message" json:"message"`
+	Author         string      `gorm:"author" json:"author"`
+	Date           string      `gorm:"string" json:"date"`
+	URL            string      `gorm:"html_url" json:"html_url"`
+	SHA            string      `gorm:"sha" json:"sha"`
+}
+```
 
-Use the /{owner}/repos/{repo}/commits/reset/{reset_sha} endpoint to request a reset to a specific commit SHA.
-Example: Reset the repository "chromium" owned by "chromium" to commit SHA "abcdef123456".
+- Hence, The query for getting all the commits for a repository by Name, is a single query that returns all the commits that meet the criteria.
+
+```go
+func (s *SqliteCommitRepository) GetRepositoryCommits(repoName string) ([]*Commit, error) {
+	//  logic to retrieve commit info from the database by repository name
+	commits := &[]*Commit{}
+	err := s.DB.Where("repository_name =?", repoName).Find(commits).Error
+	if err != nil {
+		log.Printf("%v", err)
+		return nil, err
+	}
+	return *commits, nil
+}
+```
+
+- Fetching commits for a repository by repository name is achieved via this endpoint: `/{owner}/repos/{repo}/commits`
 
 #### Get Top N Authors by Commits:
 
-Use the /authors/top/{top_n} endpoint to fetch the top N authors by commit count.
-Example: Get the top 3 authors by commit count.
+- Getting the Top N Authors by Commits Count has an interesting approach.
+- Normally, it would be achieved by making a single a wide query into the entire commit and then use a group by aggregate to get the top authors.
+- However, in this system commits can grow very quickly, it's an exponential growth, hence, running aggregate queries can impale performance and computational load on the Database at scale.
+- Moreso, this data doesn't need to be completely real-time, reemphasizing that this system prioritizes eventual consistency.
+- That said, the implementation uses a pre-aggregated data store in a different AuthorCommitCount table.wwww
+
+```go
+type AuthorCommitCount struct {
+	gorm.Model
+	Author      string `gorm:"author"`
+	CommitCount int    `gorm:"commit_count"`
+}
+```
+
+- With this table, all authors in our system will have their row in this table holding their current total commit count.
+- The row will be updated anytime there are wwwww commits being pulled into our database.
+
+```go
+func (s *SqliteCommitRepository) AddAuthorCommitCount(author string, count int) error {
+	authorCommitCount := &AuthorCommitCount{}
+	err := s.DB.Where("author =?", author).First(authorCommitCount).Error
+	if err != nil {
+		if err == gorm.ErrRecordNotFound {
+			newAuthorCommitCount := &AuthorCommitCount{
+				Author:      author,
+				CommitCount: count,
+			}
+			err = s.DB.Create(newAuthorCommitCount).Error
+			if err != nil {
+				log.Printf("Error creating author commit count for author %s: %v", author, err)
+				return err
+			}
+		} else {
+			log.Printf("Error fetching author commit count for author %s: %v", author, err)
+			return err
+		}
+	}
+	authorCommitCount.CommitCount += count
+	return s.DB.Save(authorCommitCount).Error
+}
+```
+
+- With this implementation, we only need to run a simplpe query to OrderBy the total commit count!
+
+```go
+func (s *SqliteCommitRepository) FindTopNAuthorsByCommitCounts(topN int) ([]*AuthorCommitCount, error) {
+	authorCounts := &[]*AuthorCommitCount{}
+	err := s.DB.Order("commit_count DESC").Limit(topN).Find(authorCounts).Error
+	if err != nil {
+		log.Printf("Error fetching top %d authors by commit counts: %v", topN, err)
+		return nil, err
+	}
+	return *authorCounts, nil
+}
+
+```
+
+- Feth the `/authors/top/{top_n}` endpoint to fetch the top N authors by commit count.
+  Example: Get the top 3 authors by commit.
 
 ## Video Explanation
 
@@ -111,6 +177,7 @@ https://www.loom.com/share/67491e4aeec64cb6be3e86ef0e376176?sid=7cb07326-428f-4f
 
 ### Endpoint and Unit Test Demo:
 
+s
 https://www.loom.com/share/12f4fbce610a40048eab4d26d43a4bc8?sid=858c5c8d-68f4-4e08-98b0-b7ea42c370e6
 
 ## Running Tests
