@@ -126,27 +126,27 @@ Find the documentation to the API endpoints here: https://documenter.getpostman.
 #### Register a New User:
 
 Use the /register endpoint to register a new user.
-Example: Register a user with username "testuser" and full name "Test User".
+Example: Register a user with username "chromium" and full name "Test User".
 
 #### Get Repositories for a User:
 
 Use the /{owner}/repos endpoint to fetch all repositories for a user.
-Example: Fetch all repositories for the user "testuser".
+Example: Fetch all repositories for the user "chromium".
 
 #### Get Information for a Specific Repository:
 
 Use the /{owner}/repos/{repo} endpoint to get detailed information about a specific repository.
-Example: Get information for the repository "repo1" owned by "testuser".
+Example: Get information for the repository "chromium" owned by "chromium".
 
 #### Get All Commits for a Repository:
 
 Use the /{owner}/repos/{repo}/commits endpoint to get all commits for a repository.
-Example: Fetch all commits for the repository "repo1" owned by "testuser".
+Example: Fetch all commits for the repository "chromium" owned by "chromium".
 
 #### Request a Repository Reset:
 
 Use the /{owner}/repos/{repo}/commits/reset/{reset_sha} endpoint to request a reset to a specific commit SHA.
-Example: Reset the repository "repo1" owned by "testuser" to commit SHA "abcdef123456".
+Example: Reset the repository "chromium" owned by "chromium" to commit SHA "abcdef123456".
 
 #### Get Top N Authors by Commits:
 
