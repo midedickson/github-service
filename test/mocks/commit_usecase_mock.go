@@ -22,3 +22,12 @@ func (m *MockCommitUseCase) MakeRepoResetRequest(owner, repoName, resetSHA strin
 	args := m.Called(owner, repoName, resetSHA)
 	return args.Error(0)
 }
+
+func (m *MockCommitUseCase) GetTopNAuthorsByCommits(topN int) ([]*entity.AuthorCommitCount, error) {
+	args := m.Called(topN)
+	var authorCounts []*entity.AuthorCommitCount
+	if args.Get(0) != nil {
+		authorCounts = args.Get(0).([]*entity.AuthorCommitCount)
+	}
+	return authorCounts, args.Error(1)
+}

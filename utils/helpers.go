@@ -18,7 +18,7 @@ func GetPathParam(r *http.Request, name string) (string, error) {
 	return value, nil
 }
 
-func ParseQueryParams(r *http.Request, repoSearchParams *RepositorySearchParams) {
+func ParseRepoSearchQueryParams(r *http.Request, repoSearchParams *RepositorySearchParams) {
 	query := r.URL.Query()
 	if query.Get("name") != "" {
 		repoSearchParams.Name = query.Get("name")

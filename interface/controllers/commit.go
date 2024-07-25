@@ -3,6 +3,7 @@ package controllers
 import (
 	"log"
 	"net/http"
+	"strconv"
 
 	"github.com/midedickson/github-service/utils"
 )
@@ -57,4 +58,28 @@ func (c *Controller) RequestRepositoryReset(w http.ResponseWriter, r *http.Reque
 		return
 	}
 	utils.Dispatch200(w, "Reset Request sent successfully", nil)
+}
+
+func (c *Controller) GetTopNAuthorsByCommits(w http.ResponseWriter, r *http.Request) {
+	topNString, err := utils.GetPathParam(r, "top_n")
+	if err != nil {
+		utils.Dispatch400Error(w, "Invalid Payload", err)
+		return
+	}
+	topN, err := strconv.Atoi(topNString)
+	if err != nil {
+		utils.Dispatch400Error(w, "Invalid Payload", err)
+		return
+	}
+	if topN <= 0 {
+		utils.Dispatch400Error(w, "Invalid Payload", err)
+		return
+	}
+	authors, err := c.commitUsecase.GetTopNAuthorsByCommits(topN)
+	if err != nil {
+		log.Printf("Error in getting top n authors: %v", err)
+		utils.Dispatch500Error(w, err)
+		return
+	}
+	utils.Dispatch200(w, "Top Authors by Commits Fetched Successfully", authors)
 }
