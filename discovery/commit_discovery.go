@@ -3,7 +3,6 @@ package discovery
 import (
 	"log"
 
-	"github.com/midedickson/github-service/config"
 	"github.com/midedickson/github-service/dto"
 	"github.com/midedickson/github-service/entity"
 	"github.com/midedickson/github-service/interface/repository"
@@ -20,13 +19,13 @@ type CommitDiscoveryService struct {
 
 func NewCommitDiscoveryService(repoRepository repository.RepoRepository,
 	requester requester.Requester,
-	commitRepository repository.CommitRepository) *CommitDiscoveryService {
+	commitRepository repository.CommitRepository, startDateLimit, endDateLimit string) *CommitDiscoveryService {
 	return &CommitDiscoveryService{
 		repoRepository:   repoRepository,
 		commitRepository: commitRepository,
 		requester:        requester,
-		startDateLimit:   config.GetCommitStartDate(),
-		endDateLimit:     config.GetCommitEndDate(),
+		startDateLimit:   startDateLimit,
+		endDateLimit:     endDateLimit,
 	}
 }
 

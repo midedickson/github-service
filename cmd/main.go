@@ -40,7 +40,7 @@ func main() {
 	commitRepository := database.NewSqliteCommitRepository(database.DB)
 
 	// commit manager for handling commit discovery and monitoring task execution
-	commitManager := discovery.NewCommitDiscoveryService(repoRepository, repoRequester, commitRepository)
+	commitManager := discovery.NewCommitDiscoveryService(repoRepository, repoRequester, commitRepository, config.GetCommitStartDate(), config.GetCommitEndDate())
 
 	// repo discovery for executing tasks relating to finding repositories
 	repoDiscovery := discovery.NewRepositoryDiscoveryService(repoRequester, userRepository, repoRepository, commitRepository, commitManager)
