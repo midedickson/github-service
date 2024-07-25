@@ -30,6 +30,9 @@ func (r *RepoUseCaseService) GetRepositoryInfo(username, repoName string) (*enti
 		return nil, err
 	}
 	repo, err := r.repoRepository.GetRepository(user.ID, repoName)
+	if err != nil {
+		return nil, err
+	}
 	if repo == nil {
 		go r.task.AddRequestToFetchNewlyRequestedRepoQueue(user.Username, repoName)
 		return nil, nil

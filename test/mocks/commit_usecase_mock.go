@@ -17,3 +17,8 @@ func (m *MockCommitUseCase) GetRepositoryCommits(repoName string) ([]*entity.Com
 	}
 	return commits, args.Error(1)
 }
+
+func (m *MockCommitUseCase) MakeRepoResetRequest(owner, repoName, resetSHA string) error {
+	args := m.Called(owner, repoName, resetSHA)
+	return args.Error(0)
+}

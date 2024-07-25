@@ -10,4 +10,5 @@ func ConnectRoutes(r *mux.Router, controller *controllers.Controller) {
 	r.HandleFunc("/{owner}/repos", controller.GetRepositories).Methods("GET")
 	r.HandleFunc("/{owner}/repos/{repo}", controller.GetRepositoryInfo).Methods("GET")
 	r.HandleFunc("/{owner}/repos/{repo}/commits", controller.GetRepositoryCommits).Methods("GET")
+	r.HandleFunc("/{owner}/repos/{repo}/commits/reset/{reset_sha}", controller.RequestRepositoryReset).Methods("GET")
 }

@@ -97,9 +97,13 @@ func (r *RepositoryRequester) GetRepositoryInfo(owner, repo string) (*dto.Reposi
 	}
 	return &repository, nil
 }
-func (r *RepositoryRequester) GetRepositoryCommits(owner, repo string) (*[]dto.CommitResponseDTO, error) {
+func (r *RepositoryRequester) GetRepositoryCommits(owner, repo string, queryParams *dto.CommitQueryParams) (*[]dto.CommitResponseDTO, error) {
 	// logic to fetch repository commits
 	url := fmt.Sprintf("https://api.github.com/repos/%s/%s/commits", owner, repo)
+	if queryParams != nil {
+		query := queryParams.String()
+		url += query
+	}
 	var commits []dto.CommitResponseDTO
 
 	if err := r.fetchAndDecode(url, &commits); err != nil {

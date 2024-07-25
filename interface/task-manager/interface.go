@@ -7,4 +7,5 @@ import (
 type Task interface {
 	AddUserToGetAllRepoQueue(user *entity.User)
 	AddRequestToFetchNewlyRequestedRepoQueue(username, repoName string)
+	AddRequestToResetRepositoryQueue(repoName, resetSHA string)
 }

@@ -15,8 +15,8 @@ func (t *TaskManager) GetAllRepoForUser(wg *sync.WaitGroup) {
 		// Handover task to repository discovery
 		wg.Add(1)
 		go t.repoDiscovery.GetAllUserRepositories(user, wg)
+		go t.AddUserToGetAllRepoQueue(user)
 	}
-
 }
 
 func (t *TaskManager) FetchNewlyRequestedRepo(wg *sync.WaitGroup) {
@@ -31,7 +31,20 @@ func (t *TaskManager) FetchNewlyRequestedRepo(wg *sync.WaitGroup) {
 	}
 
 	log.Println("exiting checking for newly requested repos...")
+}
 
+func (t *TaskManager) HandleRequestedRepoReset(wg *sync.WaitGroup) {
+	//  logic to fetch a newly requested repo and commits for the given repository
+	defer wg.Done()
+	log.Println("waiting for newly requested repos...")
+
+	for repoResetRequest := range t.ResetRepositoryQueue {
+		log.Println("checking for newly requested repos...")
+		wg.Add(1)
+		go t.commitManager.ResetCommitToSHA(repoResetRequest.RepoName, repoResetRequest.ResetSHA)
+	}
+
+	log.Println("exiting checking for newly requested repos...")
 }
 
 func (t *TaskManager) CheckForUpdateOnAllRepo(wg *sync.WaitGroup) {
@@ -52,5 +65,4 @@ func (t *TaskManager) CheckForUpdateOnAllRepo(wg *sync.WaitGroup) {
 		time.Sleep(3 * time.Second)
 		go t.AddSignalToCheckForUpdateOnAllRepoQueue()
 	}
-
 }

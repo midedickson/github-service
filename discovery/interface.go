@@ -12,3 +12,9 @@ type RepositoryDiscovery interface {
 	FetchNewlyRequestedRepo(repoRequest *dto.RepoRequest, wg *sync.WaitGroup)
 	CheckForUpdateOnAllRepo() error
 }
+
+type CommitDiscovery interface {
+	CheckForNewCommits(repo *entity.Repository) error
+	GetCommitsForNewRepo(repo *entity.Repository) error
+	ResetCommitToSHA(repoName, resetSha string) error
+}

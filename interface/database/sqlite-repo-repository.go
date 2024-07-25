@@ -2,6 +2,7 @@ package database
 
 import (
 	"github.com/midedickson/github-service/dto"
+	"github.com/midedickson/github-service/entity"
 	"github.com/midedickson/github-service/utils"
 	"gorm.io/gorm"
 )
@@ -14,7 +15,7 @@ func NewSqliteRepoRepository(db *gorm.DB) *SqliteRepoRepository {
 	return &SqliteRepoRepository{DB: db}
 }
 
-func (s *SqliteRepoRepository) StoreRepositoryInfo(remoteRepoInfo *dto.RepositoryInfoResponseDTO, owner *User) (*Repository, error) {
+func (s *SqliteRepoRepository) StoreRepositoryInfo(remoteRepoInfo *dto.RepositoryInfoResponseDTO, owner *entity.User) (*Repository, error) {
 	//  logic to store repository info in the database
 
 	// check if this remote repository already exists in our database

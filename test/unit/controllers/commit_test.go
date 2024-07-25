@@ -76,3 +76,94 @@ func TestGetRepositoryCommits(t *testing.T) {
 		mockCommitUseCase.AssertExpectations(t)
 	})
 }
+
+func TestRequestRepositoryReset(t *testing.T) {
+	mockCommitUseCase := new(mocks.MockCommitUseCase)
+	controller := controllers.NewController(nil, nil, nil, mockCommitUseCase)
+
+	t.Run("successful repository reset request", func(t *testing.T) {
+		req, err := http.NewRequest("POST", "/{owner}/repos/{repo}/reset/{reset_sha}", nil)
+		assert.NoError(t, err)
+		req = mux.SetURLVars(req, map[string]string{
+			"owner":     "testuser",
+			"repo":      "testrepo",
+			"reset_sha": "abcdef123456",
+		})
+
+		rr := httptest.NewRecorder()
+		mockCommitUseCase.On("MakeRepoResetRequest", "testuser", "testrepo", "abcdef123456").Return(nil)
+
+		http.HandlerFunc(controller.RequestRepositoryReset).ServeHTTP(rr, req)
+
+		assert.Equal(t, http.StatusOK, rr.Code)
+		var response utils.APIResponse
+		json.Unmarshal(rr.Body.Bytes(), &response)
+		assert.Equal(t, true, response.Success)
+		assert.Equal(t, "Reset Request sent successfully", response.Message)
+		assert.Nil(t, response.Data)
+		mockCommitUseCase.AssertExpectations(t)
+	})
+
+	t.Run("invalid payload - missing owner", func(t *testing.T) {
+		req, err := http.NewRequest("POST", "/{owner}/repos/{repo}/reset/{reset_sha}", nil)
+		assert.NoError(t, err)
+		req = mux.SetURLVars(req, map[string]string{
+			"owner":     "",
+			"repo":      "testrepo",
+			"reset_sha": "abcdef123456",
+		})
+
+		rr := httptest.NewRecorder()
+
+		http.HandlerFunc(controller.RequestRepositoryReset).ServeHTTP(rr, req)
+
+		assert.Equal(t, http.StatusBadRequest, rr.Code)
+		var response utils.APIResponse
+		json.Unmarshal(rr.Body.Bytes(), &response)
+		assert.Equal(t, false, response.Success)
+		assert.Equal(t, "Invalid Payload", response.Message)
+	})
+
+	t.Run("invalid payload - missing repo", func(t *testing.T) {
+		req, err := http.NewRequest("POST", "/{owner}/repos/{repo}/reset/{reset_sha}", nil)
+		assert.NoError(t, err)
+		req = mux.SetURLVars(req, map[string]string{
+			"owner":     "testuserx",
+			"repo":      "",
+			"reset_sha": "abcdef123456",
+		})
+
+		rr := httptest.NewRecorder()
+
+		http.HandlerFunc(controller.RequestRepositoryReset).ServeHTTP(rr, req)
+
+		assert.Equal(t, http.StatusBadRequest, rr.Code)
+		var response utils.APIResponse
+		json.Unmarshal(rr.Body.Bytes(), &response)
+		assert.Equal(t, false, response.Success)
+		assert.Equal(t, "Invalid Payload", response.Message)
+	})
+
+	t.Run("internal server error", func(t *testing.T) {
+		req, err := http.NewRequest("POST", "/{owner}/repos/{repo}/reset/{reset_sha}", nil)
+		assert.NoError(t, err)
+		req = mux.SetURLVars(req, map[string]string{
+			"owner":     "testuserx",
+			"repo":      "testrepo",
+			"reset_sha": "abcdef123456",
+		})
+
+		rr := httptest.NewRecorder()
+
+		mockCommitUseCase.On("MakeRepoResetRequest", "testuserx", "testrepo", "abcdef123456").Return(errors.New("some error"))
+
+		http.HandlerFunc(controller.RequestRepositoryReset).ServeHTTP(rr, req)
+
+		assert.Equal(t, http.StatusInternalServerError, rr.Code)
+		var response utils.APIResponse
+		json.Unmarshal(rr.Body.Bytes(), &response)
+		assert.Equal(t, false, response.Success)
+		assert.Equal(t, "some error", response.Message)
+		mockCommitUseCase.AssertExpectations(t)
+	})
+}

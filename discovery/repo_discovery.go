@@ -16,18 +16,21 @@ type RepositoryDiscoveryService struct {
 	userRepository   repository.UserRepository
 	repoRepository   repository.RepoRepository
 	commitRepository repository.CommitRepository
+	commitManager    CommitDiscovery
 }
 
 func NewRepositoryDiscoveryService(requester requester.Requester,
 	userRepository repository.UserRepository,
 	repoRepository repository.RepoRepository,
 	commitRepository repository.CommitRepository,
+	commitManager CommitDiscovery,
 ) *RepositoryDiscoveryService {
 	return &RepositoryDiscoveryService{
 		requester:        requester,
 		userRepository:   userRepository,
 		repoRepository:   repoRepository,
 		commitRepository: commitRepository,
+		commitManager:    commitManager,
 	}
 }
 
@@ -49,22 +52,12 @@ func (rd *RepositoryDiscoveryService) GetAllUserRepositories(user *entity.User, 
 	// using a go routine to optimize the saving of repositories and fetching the repo  commits
 	// this will help the worker process tasks from the channel faster for users at scale
 	for _, newRepoInfo := range *userRepositories {
-		_, err := rd.repoRepository.StoreRepositoryInfo(&newRepoInfo, dbUser)
+		repo, err := rd.repoRepository.StoreRepositoryInfo(&newRepoInfo, user)
 		if err != nil {
 			log.Printf("Error in storing repository: %v", err)
 			continue
 		}
-		log.Printf("fetching repository commits for repo: %s...", newRepoInfo.Name)
-		remoteCommits, err := rd.requester.GetRepositoryCommits(user.Username, newRepoInfo.Name)
-		if err != nil {
-			log.Printf("Error in fetching commits: %v", err)
-			continue
-		}
-		err = rd.commitRepository.StoreRepositoryCommits(remoteCommits, newRepoInfo.Name, dbUser)
-		if err != nil {
-			log.Printf("Error in saving commits: %v", err)
-			continue
-		}
+		rd.commitManager.CheckForNewCommits(repo.ToEntity())
 	}
 	log.Printf("Gotten repositories for user %v", user)
 }
@@ -80,18 +73,8 @@ func (rd *RepositoryDiscoveryService) FetchNewlyRequestedRepo(repoRequest *dto.R
 		return
 	}
 	user, _ := rd.userRepository.GetUser(repoRequest.Username)
-	repo, _ := rd.repoRepository.StoreRepositoryInfo(remoteRepoInfo, user)
-	log.Printf("fetching repository commits for repo: %s...", repoRequest.RepoName)
-	remoteCommits, err := rd.requester.GetRepositoryCommits(user.Username, repo.Name)
-	if err != nil {
-		log.Printf("Error in fetching commits: %v", err)
-		return
-	}
-	err = rd.commitRepository.StoreRepositoryCommits(remoteCommits, repo.Name, user)
-	if err != nil {
-		log.Printf("Error in saving commits: %v", err)
-		return
-	}
+	repo, _ := rd.repoRepository.StoreRepositoryInfo(remoteRepoInfo, user.ToEntity())
+	rd.commitManager.GetCommitsForNewRepo(repo.ToEntity())
 }
 
 func (rd *RepositoryDiscoveryService) CheckForUpdateOnAllRepo() error {
@@ -112,7 +95,7 @@ func (rd *RepositoryDiscoveryService) CheckForUpdateOnAllRepo() error {
 			continue
 		}
 		if repo.RemoteUpdatedAt != remoteRepoInfo.UpdatedAt {
-			_, err = rd.repoRepository.StoreRepositoryInfo(remoteRepoInfo, repo.Owner)
+			_, err = rd.repoRepository.StoreRepositoryInfo(remoteRepoInfo, repo.Owner.ToEntity())
 			if err != nil {
 				log.Printf("Error in updating repository: %v", err)
 			}

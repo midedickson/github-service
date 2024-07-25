@@ -5,6 +5,7 @@ import (
 	"log"
 
 	"github.com/midedickson/github-service/dto"
+	"github.com/midedickson/github-service/entity"
 	"gorm.io/gorm"
 )
 
@@ -16,7 +17,7 @@ func NewSqliteCommitRepository(db *gorm.DB) *SqliteCommitRepository {
 	return &SqliteCommitRepository{DB: db}
 }
 
-func (s *SqliteCommitRepository) StoreRepositoryCommits(commitRepoInfos *[]dto.CommitResponseDTO, repoName string, owner *User) error {
+func (s *SqliteCommitRepository) StoreRepositoryCommits(commitRepoInfos *[]dto.CommitResponseDTO, repoName string, owner *entity.User) error {
 	//  logic to store commit info in the database
 	repo := &Repository{}
 	err := s.DB.Where("owner_id =?", owner.ID).Where("name =?", repoName).First(repo).Error
@@ -78,4 +79,40 @@ func (s *SqliteCommitRepository) GetRepositoryCommits(repoName string) ([]*Commi
 		return nil, err
 	}
 	return *commits, nil
+}
+
+func (s *SqliteCommitRepository) GetMostRecentCommitInRepository(repoName string) (*Commit, error) {
+	commit := &Commit{}
+	err := s.DB.Where("repository_name =?", repoName).Order("CreatedAt DESC").First(commit).Error
+	if err != nil {
+		if err == gorm.ErrRecordNotFound {
+			return nil, nil
+		}
+		return nil, err
+	}
+	return commit, nil
+}
+
+func (s *SqliteCommitRepository) DeleteUntilSHA(repoName, sha string) error {
+	allCommits := []*Commit{}
+
+	// get all the commits in descending order of when they were created
+	err := s.DB.Where("repository_name =?", repoName).Order("CreatedAt DESC").Find(allCommits).Error
+	if err != nil {
+		log.Printf("Error fetching all commits in created at order: %v", err)
+		return err
+	}
+	// we remove all the items from the most recent commits to the preferred sha we want to resr into
+	for _, commit := range allCommits {
+		if commit.SHA == sha {
+			break
+		}
+		err = s.DB.Delete(commit).Error
+		if err != nil {
+			log.Printf("Error deleting commits after sha %s: %v", sha, err)
+			return err
+		}
+	}
+
+	return nil
 }

@@ -25,3 +25,10 @@ func (t *TaskManager) AddRequestToFetchNewlyRequestedRepoQueue(username, repoNam
 func (t *TaskManager) AddSignalToCheckForUpdateOnAllRepoQueue() {
 	t.CheckForUpdateOnAllRepoQueue <- "signal"
 }
+
+func (t *TaskManager) AddRequestToResetRepositoryQueue(repoName, resetSHA string) {
+	t.ResetRepositoryQueue <- &dto.RepoResetRequest{
+		RepoName: repoName,
+		ResetSHA: resetSHA,
+	}
+}

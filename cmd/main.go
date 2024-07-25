@@ -39,16 +39,19 @@ func main() {
 	repoRepository := database.NewSqliteRepoRepository(database.DB)
 	commitRepository := database.NewSqliteCommitRepository(database.DB)
 
+	// commit manager for handling commit discovery and monitoring task execution
+	commitManager := discovery.NewCommitDiscoveryService(repoRepository, repoRequester, commitRepository)
+
 	// repo discovery for executing tasks relating to finding repositories
-	repoDiscovery := discovery.NewRepositoryDiscoveryService(repoRequester, userRepository, repoRepository, commitRepository)
+	repoDiscovery := discovery.NewRepositoryDiscoveryService(repoRequester, userRepository, repoRepository, commitRepository, commitManager)
 
 	// task manager for managing the queueing and execution of tasks
-	taskManager := tasks.NewTaskManager(repoDiscovery)
+	taskManager := tasks.NewTaskManager(repoDiscovery, commitManager)
 
 	// Usecase services for each domain/service
 	userUseCase := usecase.NewUserUseCaseService(userRepository, taskManager)
 	repoUseCase := usecase.NewRepoUseCaseService(repoRepository, userUseCase, taskManager)
-	commitUseCase := usecase.NewCommitUseCaseService(commitRepository)
+	commitUseCase := usecase.NewCommitUseCaseService(commitRepository, repoUseCase, taskManager)
 
 	// creation of application handler
 	controller := controllers.NewController(repoRequester, userUseCase, repoUseCase, commitUseCase)
@@ -60,6 +63,8 @@ func main() {
 	go taskManager.FetchNewlyRequestedRepo(&wg)
 	wg.Add(1)
 	go taskManager.CheckForUpdateOnAllRepo(&wg)
+	wg.Add(1)
+	go taskManager.HandleRequestedRepoReset(&wg)
 
 	// start the task for updating all repositories
 	go taskManager.AddSignalToCheckForUpdateOnAllRepoQueue()
@@ -91,6 +96,7 @@ func main() {
 	close(taskManager.GetAllRepoForUserQueue)
 	close(taskManager.FetchNewlyRequestedRepoQueue)
 	close(taskManager.CheckForUpdateOnAllRepoQueue)
+	close(taskManager.ResetRepositoryQueue)
 
 	// Wait for all goroutines to complete
 	wg.Wait()

@@ -45,20 +45,54 @@ Before you begin, ensure you have the following installed on your machine:
 ## Project Structure
 
 ```
-github-service/
-│
-├── controllers/      # Contains controller logic
-├── database/         # Database interaction and models
-├── dto/              # Data Transfer Objects
-├── mocks/            # Mock implementations for testing
-├── requester/        # API request logic
-├── tasks/            # Task processing logic
-├── utils/            # Utility functions and helpers
-├── main.go           # Main entry point for the application
-├── go.mod            # Go module file
-├── go.sum            # Go dependencies file
-├── README.md         # Project documentation
-└── ...               # Other files
+- github-service/
+  - cmd/
+    - main.go
+  - config/
+    - env.go
+  - discovery/
+    - interface.go
+    - repo_discovery.go
+  - dto/
+    - create_user_payload.go
+    - api_response.go
+  - entity/
+    - repository.go
+  - interface/
+    - controllers/
+      - commits.go
+      - commits_test.go
+    - database/
+     - commit.go
+     - db.go
+     - repository.go
+     - sqlite-commit-repository.go
+     - sqlite-repo-repository.go
+     - sqlite-user-repository.go
+     - user.go
+  - repository/
+  - task-manager/
+    - queues.go
+    - executors.go
+    - interface.go
+    - task-manager.go
+  - requester/
+   - interface.go
+   - repo-requester.go
+  - routes/
+    - routes.go
+  - test/
+    - mocks/
+      - mock_commit_usecase.go
+    - unit/
+        - contollers/
+            - commit_test.go
+  - usecase/
+  - utils/
+  - .gitignore
+  - go.mod
+  - go.sum
+
 ```
 
 ## Dependencies
@@ -78,7 +112,7 @@ The project uses the following dependencies:
 To run the application locally:
 
 ```sh
-go run main.go
+go run cmd/main.go
 ```
 
 The application will start on `http://localhost:8080`.
