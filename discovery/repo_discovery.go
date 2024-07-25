@@ -34,9 +34,8 @@ func NewRepositoryDiscoveryService(requester requester.Requester,
 	}
 }
 
-func (rd *RepositoryDiscoveryService) GetAllUserRepositories(user *entity.User, wg *sync.WaitGroup) {
+func (rd *RepositoryDiscoveryService) GetAllUserRepositories(user *entity.User) {
 	//  logic to fetch all repositories for the given user
-	defer wg.Done()
 	// re-comfirm that this user is still in our database
 	dbUser, _ := rd.userRepository.GetUser(user.Username)
 	if dbUser == nil {
@@ -58,6 +57,8 @@ func (rd *RepositoryDiscoveryService) GetAllUserRepositories(user *entity.User, 
 			continue
 		}
 		rd.commitManager.CheckForNewCommits(repo.ToEntity())
+		// time.sleep to imitate more processing for each added repository, this also helps testing without trigerring the rate limiter
+		time.Sleep(3 * time.Minute)
 	}
 	log.Printf("Gotten repositories for user %v", user)
 }

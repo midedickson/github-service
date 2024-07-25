@@ -18,12 +18,11 @@ type Commit struct {
 
 func (model *Commit) ToEntity() *entity.Commit {
 	return &entity.Commit{
-		ID:         model.ID,
-		SHA:        model.SHA,
-		Repository: model.Repository.ToEntity(),
-		Message:    model.Message,
-		Author:     model.Author,
-		Date:       model.Date,
-		URL:        model.URL,
+		ID:      model.ID,
+		SHA:     model.SHA,
+		Message: model.Message,
+		Author:  model.Author,
+		Date:    model.Date,
+		URL:     model.URL,
 	}
 }

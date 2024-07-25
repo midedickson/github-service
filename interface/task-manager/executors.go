@@ -14,8 +14,11 @@ func (t *TaskManager) GetAllRepoForUser(wg *sync.WaitGroup) {
 
 		// Handover task to repository discovery
 		wg.Add(1)
-		go t.repoDiscovery.GetAllUserRepositories(user, wg)
-		go t.AddUserToGetAllRepoQueue(user)
+		go func() {
+			defer wg.Done()
+			t.repoDiscovery.GetAllUserRepositories(user)
+			t.AddUserToGetAllRepoQueue(user)
+		}()
 	}
 }
 

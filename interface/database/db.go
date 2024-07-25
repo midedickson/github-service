@@ -22,7 +22,7 @@ func ConnectToDB(url string) {
 
 func AutoMigrate() {
 	log.Println("Auto Migrating Models...")
-	err := DB.AutoMigrate(&Repository{}, &Commit{}, &User{})
+	err := DB.AutoMigrate(&Repository{}, &Commit{}, &User{}, &AuthorCommitCount{})
 	if err != nil {
 		panic(err)
 	}

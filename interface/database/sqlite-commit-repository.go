@@ -83,7 +83,7 @@ func (s *SqliteCommitRepository) GetRepositoryCommits(repoName string) ([]*Commi
 
 func (s *SqliteCommitRepository) GetMostRecentCommitInRepository(repoName string) (*Commit, error) {
 	commit := &Commit{}
-	err := s.DB.Where("repository_name =?", repoName).Order("CreatedAt DESC").First(commit).Error
+	err := s.DB.Where("repository_name =?", repoName).Order("created_at DESC").First(commit).Error
 	if err != nil {
 		if err == gorm.ErrRecordNotFound {
 			return nil, nil
@@ -97,7 +97,7 @@ func (s *SqliteCommitRepository) DeleteUntilSHA(repoName, sha string) error {
 	allCommits := &[]*Commit{}
 
 	// get all the commits in descending order of when they were created
-	err := s.DB.Where("repository_name =?", repoName).Order("CreatedAt DESC").Find(allCommits).Error
+	err := s.DB.Where("repository_name =?", repoName).Order("created_at DESC").Find(allCommits).Error
 	if err != nil {
 		log.Printf("Error fetching all commits in created at order: %v", err)
 		return err
@@ -115,6 +115,29 @@ func (s *SqliteCommitRepository) DeleteUntilSHA(repoName, sha string) error {
 	}
 
 	return nil
+}
+
+func (s *SqliteCommitRepository) AddAuthorCommitCount(author string, count int) error {
+	authorCommitCount := &AuthorCommitCount{}
+	err := s.DB.Where("author =?", author).First(authorCommitCount).Error
+	if err != nil {
+		if err == gorm.ErrRecordNotFound {
+			newAuthorCommitCount := &AuthorCommitCount{
+				Author:      author,
+				CommitCount: count,
+			}
+			err = s.DB.Create(newAuthorCommitCount).Error
+			if err != nil {
+				log.Printf("Error creating author commit count for author %s: %v", author, err)
+				return err
+			}
+		} else {
+			log.Printf("Error fetching author commit count for author %s: %v", author, err)
+			return err
+		}
+	}
+	authorCommitCount.CommitCount += count
+	return s.DB.Save(authorCommitCount).Error
 }
 
 func (s *SqliteCommitRepository) FindTopNAuthorsByCommitCounts(topN int) ([]*AuthorCommitCount, error) {
