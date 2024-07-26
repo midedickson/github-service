@@ -113,7 +113,7 @@ func (s *SqliteCommitRepository) GetRepositoryCommits(repoName string) ([]*Commi
 - Normally, it would be achieved by making a single a wide query into the entire commit and then use a group by aggregate to get the top authors.
 - However, in this system commits can grow very quickly, it's an exponential growth, hence, running aggregate queries can impale performance and computational load on the Database at scale.
 - Moreso, this data doesn't need to be completely real-time, reemphasizing that this system prioritizes eventual consistency.
-- That said, the implementation uses a pre-aggregated data store in a different AuthorCommitCount table.wwww
+- That said, the implementation uses a pre-aggregated data store in a different AuthorCommitCount table.
 
 ```go
 type AuthorCommitCount struct {
@@ -124,7 +124,7 @@ type AuthorCommitCount struct {
 ```
 
 - With this table, all authors in our system will have their row in this table holding their current total commit count.
-- The row will be updated anytime there are wwwww commits being pulled into our database.
+- The row will be updated anytime there are new commits being pulled into our database.
 
 ```go
 func (s *SqliteCommitRepository) AddAuthorCommitCount(author string, count int) error {
@@ -166,7 +166,7 @@ func (s *SqliteCommitRepository) FindTopNAuthorsByCommitCounts(topN int) ([]*Aut
 
 ```
 
-- Feth the `/authors/top/{top_n}` endpoint to fetch the top N authors by commit count.
+- Use the `/authors/top/{top_n}` endpoint to fetch the top N authors by commit count.
   Example: Get the top 3 authors by commit.
 
 ## Video Explanation
@@ -177,7 +177,6 @@ https://www.loom.com/share/67491e4aeec64cb6be3e86ef0e376176?sid=7cb07326-428f-4f
 
 ### Endpoint and Unit Test Demo:
 
-s
 https://www.loom.com/share/12f4fbce610a40048eab4d26d43a4bc8?sid=858c5c8d-68f4-4e08-98b0-b7ea42c370e6
 
 ## Running Tests
